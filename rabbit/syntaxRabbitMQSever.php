@@ -29,7 +29,7 @@ function doLogin($username,$password)
 	if($stmt->num_rows>0){
 		$stmt->bind_result($name,$hashed_password);
 		$stmt->fetch();
-		if(password_verify($password $hashed_password){
+		if(password_verify($password, $hashed_password)){
 			return array('Validated'=>true,'id'=>$id,'username'=>$username);		
 		}
 		else{
