@@ -6,7 +6,25 @@ require_once('rabbitMQLib.inc');
 
 function doLogin($username,$password)
 {
-    // lookup username in databas
+    	$mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+
+	if ($mydb->errno != 0)
+	{
+		echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+		exit(0);
+	}	
+
+	echo "successfully connected to database".PHP_EOL;
+
+	$query = "select * from students;";
+
+	$response = $mydb->query($query);
+	if ($mydb->errno != 0)
+	{
+		echo "failed to execute query:".PHP_EOL;
+		echo __FILE__.':'.__LINE__.":error: ".$mydb->error.PHP_EOL;
+		exit(0);
+	}
     // check password
     return true;
     //return false if not valid
