@@ -39,14 +39,14 @@ function doLogin($username,$password)
 		}
 		else{
 			 $request = array();
-			 $request['Validated'] = true;
+			 $request['Validated'] = false;
 			 print_r($request);
 		      	 return $request; 
 		}
 	}
 	else{
 		$request = array();
-                         $request['Validated'] = true;
+                         $request['Validated'] = false;
                          print_r($request);
                          return $request;
 
