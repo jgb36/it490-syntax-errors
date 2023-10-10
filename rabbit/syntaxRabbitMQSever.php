@@ -16,18 +16,26 @@ function doLogin($username,$password)
 
 	echo "successfully connected to database".PHP_EOL;
 
-	$query = "select * from students;";
+	$stmt = $mydb->prepare("SELECT name, password FROM users WHERE username = ?"); $stmt->bind_param("s", $username); 
 
-	$response = $mydb->query($query);
+	$stmt->execute();
+	$stmt->store_result();
 	if ($mydb->errno != 0)
 	{
 		echo "failed to execute query:".PHP_EOL;
 		echo __FILE__.':'.__LINE__.":error: ".$mydb->error.PHP_EOL;
 		exit(0);
 	}
-    // check password
-    return true;
-    //return false if not valid
+	if($stmt->num_rows>0){
+		$stmt->bind_result($name,$hashed_password);
+		$stmt->fetch();
+		if(password_verify($password $hashed_password){
+			return array('Validated'=>true,'id'=>$id,'username'=>$username);		
+		}
+		else{
+			return array('Validated'=>false);
+		}
+	}
 }
 
 function requestProcessor($request)
