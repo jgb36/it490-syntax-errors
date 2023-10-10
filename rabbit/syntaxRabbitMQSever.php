@@ -16,7 +16,7 @@ function doLogin($username,$password)
 
 	echo "successfully connected to database".PHP_EOL;
 
-	$stmt = $mydb->prepare("SELECT name, password FROM users WHERE username = ?"); $stmt->bind_param("s", $username); 
+	$stmt = $mydb->prepare("SELECT name, password FROM syntaxUsers WHERE name = ?"); $stmt->bind_param("s", $username); 
 
 	$stmt->execute();
 	$stmt->store_result();
@@ -30,12 +30,28 @@ function doLogin($username,$password)
 		$stmt->bind_result($name,$hashed_password);
 		$stmt->fetch();
 		if(password_verify($password, $hashed_password)){
-			return array('Validated'=>true,'id'=>$id,'username'=>$username);		
+			$request = array();
+			$request['Validated'] = true;
+			$request['id'] = $id;
+			$request['username'] = $username;
+			print_r($request);
+			return $request;		
 		}
 		else{
-			return array('Validated'=>false);
+			 $request = array();
+			 $request['Validated'] = true;
+			 print_r($request);
+		      	 return $request; 
 		}
 	}
+	else{
+		$request = array();
+                         $request['Validated'] = true;
+                         print_r($request);
+                         return $request;
+
+
+		}
 }
 
 function requestProcessor($request)
