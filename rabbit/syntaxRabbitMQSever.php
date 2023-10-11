@@ -38,13 +38,14 @@ function doLogin($username,$password)
 			print_r($request);
 			return $request;		
 	//	}
-//		else{
-//			 $request = array();
-//			 $request['Validated'] = true;
-//			 $request['1'] = 'one';
-//			 print_r($request);
-//		      	 return $request; 
-//		}
+/*		else{
+			 $request = array();
+			 $request['Validated'] = true;
+			 $request['1'] = 'one';
+			 print_r($request);
+		      	 return $request; 
+ 		}
+*/	 
 	}
 	else{
 		$request = array();
