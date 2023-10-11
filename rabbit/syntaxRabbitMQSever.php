@@ -16,7 +16,8 @@ function doLogin($username,$password)
 
 	echo "successfully connected to database".PHP_EOL;
 
-	$stmt = $mydb->prepare("SELECT name, password FROM syntaxUsers WHERE name = ?"); $stmt->bind_param("s", $username); 
+	$stmt = $mydb->prepare("SELECT id, name, password FROM syntaxUsers WHERE name = ? AND password = ?");
+       	$stmt->bind_param("ss", $username, $password); 
 
 	$stmt->execute();
 	$stmt->store_result();
@@ -27,26 +28,28 @@ function doLogin($username,$password)
 		exit(0);
 	}
 	if($stmt->num_rows>0){
-		$stmt->bind_result($name,$hashed_password);
+		$stmt->bind_result($id, $name, $password);
 		$stmt->fetch();
-		if(password_verify($password, $hashed_password)){
+	//	if(password_verify($password, $hashed_password)){
 			$request = array();
 			$request['Validated'] = true;
 			$request['id'] = $id;
 			$request['username'] = $username;
 			print_r($request);
 			return $request;		
-		}
-		else{
-			 $request = array();
-			 $request['Validated'] = true;
-			 print_r($request);
-		      	 return $request; 
-		}
+	//	}
+//		else{
+//			 $request = array();
+//			 $request['Validated'] = true;
+//			 $request['1'] = 'one';
+//			 print_r($request);
+//		      	 return $request; 
+//		}
 	}
 	else{
 		$request = array();
-                         $request['Validated'] = true;
+		$request['Validated'] = true;
+		$request['2'] = 'two';
                          print_r($request);
                          return $request;
 
