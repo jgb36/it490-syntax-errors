@@ -16,11 +16,21 @@ else
 
 $request = array();
 $request['type'] = "Login";
-$request['username'] = "steve";
-$request['password'] = "password";
+$request['username'] = "jay";
+$request['password'] = "bestPWNoPWisBetter";
 $request['message'] = $msg;
-$response = $client->send_request($request);
-//$response = $client->publish($request);
+print_r($response = $client->send_request($request));
+if($response['Validated'] = 'true')
+{
+	$_SESSION['id'] = $response['id'];
+        $_SESSION['username'] = $response['username'];
+	session_start();
+}
+else
+{
+	echo "Invalid Session ";
+}
+$response = $client->publish($request);
 
 echo "client received response: ".PHP_EOL;
 print_r($response);
