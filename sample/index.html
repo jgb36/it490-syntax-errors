@@ -10,12 +10,16 @@ function HandleLoginResponse(response)
 
 function SendLoginRequest(username,password)
 {
+	alert("in loginrequest");
+	event.preventDefault();
 	var request = new XMLHttpRequest();
+	var username = document.getElementById("username");
+	var password = document.getElementById("password");
 	request.open("POST","login.php",true);
 	request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-	request.onreadystatechange= function ()
-	{
-		
+	alert(username);
+	request.onreadystatechange= function()
+	{	
 		if ((this.readyState == 4)&&(this.status == 200))
 		{
 			HandleLoginResponse(this.responseText);
@@ -31,13 +35,13 @@ function SendLoginRequest(username,password)
 awaiting response
 </div>
 <script>
-SendLoginRequest("kehoed","12345");
+//SendLoginRequest("kehoed","12345");
 </script>
-<form action="login.php" method="post">
+<form action = "login.php" method="post">
   <label for="username">Username:</label>
   <input id="username" name="username" type="text" required />
   <label for="password">Password:</label> <input id="password" name="password" type="password" required />
-  <input name="login" type="submit" value="Login" />
+  <input name="login" type="submit" value="Login" onclick = SendLoginRequest() />
 </form>
 </body>
 </html>
