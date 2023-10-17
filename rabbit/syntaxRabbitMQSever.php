@@ -34,7 +34,7 @@ function doLogin($username,$password)
 			$request = array();
 			$request['Validated'] = true;
 			$request['id'] = $id;
-			$request['username'] = $username;
+			$request['uname'] = $username;
 			print_r($request);
 			return $request;		
 	//	}
@@ -49,13 +49,20 @@ function doLogin($username,$password)
 	}
 	else{
 		$request = array();
-		$request['Validated'] = true;
+		$request['Validated'] = 'false';
 		$request['2'] = 'two';
                          print_r($request);
                          return $request;
 
 
-		}
+	}
+	$request = array();
+                $request['Validated'] = 'false';
+                $request['2'] = 'two';
+                         print_r($request);
+                         return $request;
+
+
 }
 
 function requestProcessor($request)
@@ -68,8 +75,8 @@ function requestProcessor($request)
   }
   switch ($request['type'])
   {
-  case "Login":
-      return doLogin($request['username'],$request['password']);
+  case "login":
+      return doLogin($request['uname'], $request['pword']);
     case "validate_session":
       return doValidate($request['sessionId']);
   }
