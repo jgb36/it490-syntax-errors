@@ -8,12 +8,22 @@ $client = new rabbitMQClient("testRabbitMQ.ini","testServer");
 
 
 $request = array();
-$request['type'] = "login";
-$request['username'] = $argv[1];
-$request['password'] = $argv[2];
-$request['message'] = "HI";
-$response = $client->send_request($request);
-//$response = $client->publish($request);
+$request['type'] = "Login";
+$request['username'] = "jay";
+$request['password'] = "bestPWNoPWisBetter";
+$request['message'] = $msg;
+print_r($response = $client->send_request($request));
+if($response['Validated'] = 'true')
+{
+	$_SESSION['id'] = $response['id'];
+        $_SESSION['username'] = $response['username'];
+	session_start();
+}
+else
+{
+	echo "Invalid Session ";
+}
+$response = $client->publish($request);
 
 echo "client received response: ".PHP_EOL;
 print_r($response);
