@@ -16,18 +16,53 @@ function doLogin($username,$password)
 
 	echo "successfully connected to database".PHP_EOL;
 
-	$query = "select * from students;";
+	$stmt = $mydb->prepare("SELECT id, name, password FROM syntaxUsers WHERE name = ? AND password = ?");
+       	$stmt->bind_param("ss", $username, $password); 
 
-	$response = $mydb->query($query);
+	$stmt->execute();
+	$stmt->store_result();
 	if ($mydb->errno != 0)
 	{
 		echo "failed to execute query:".PHP_EOL;
 		echo __FILE__.':'.__LINE__.":error: ".$mydb->error.PHP_EOL;
 		exit(0);
 	}
-    // check password
-    return true;
-    //return false if not valid
+	if($stmt->num_rows>0){
+		$stmt->bind_result($id, $name, $password);
+		$stmt->fetch();
+	//	if(password_verify($password, $hashed_password)){
+			$request = array();
+			$request['Validated'] = true;
+			$request['id'] = $id;
+			$request['uname'] = $username;
+			print_r($request);
+			return $request;		
+	//	}
+/*		else{
+			 $request = array();
+			 $request['Validated'] = true;
+			 $request['1'] = 'one';
+			 print_r($request);
+		      	 return $request; 
+ 		}
+*/	 
+	}
+	else{
+		$request = array();
+		$request['Validated'] = 'false';
+		$request['2'] = 'two';
+                         print_r($request);
+                         return $request;
+
+
+	}
+	$request = array();
+                $request['Validated'] = 'false';
+                $request['2'] = 'two';
+                         print_r($request);
+                         return $request;
+
+
 }
 
 function requestProcessor($request)
@@ -40,8 +75,8 @@ function requestProcessor($request)
   }
   switch ($request['type'])
   {
-  case "Login":
-      return doLogin($request['username'],$request['password']);
+  case "login":
+      return doLogin($request['uname'], $request['pword']);
     case "validate_session":
       return doValidate($request['sessionId']);
   }
