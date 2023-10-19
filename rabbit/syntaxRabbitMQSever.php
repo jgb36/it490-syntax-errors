@@ -91,7 +91,8 @@ function userRegistration($username, $email, $password)
 		$stmt->close();
 		$stmt->store_result();
 		$mydb->close();
-		return true;
+		$request['created'] = 'true';
+	//	return true;
 	//	print_r("working here");
 	  return array("returnCode" => '0', 'message'=>"Registration Successfull for $username");
 	}
@@ -99,7 +100,8 @@ function userRegistration($username, $email, $password)
 		//Registration fails
 		$stmt->close();
 		$stmt->close();
-		return false;
+		$request['created'] = 'false';
+	//	return false;
 	  return array("returnCode" => '1', 'message'=>"Registration Failed, try again");
 	}
 }
