@@ -65,6 +65,47 @@ function doLogin($username,$password)
 
 }
 
+function UserRegistration($username, $email, $password)
+{
+        //DB connection
+        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+
+        if ($mydb->errno != 0)
+        {
+                echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+                exit(0);
+        }
+
+	echo "successfully connected to database".PHP_EOL;
+
+	//Hash the password for security
+	$hashPassword = password_hash($password, PASSWORD_DEFAULT);
+
+	//Inserts the user info into the DB
+	$stmt = $mydb->prepare("INSERT INTO users(uname, email, pword) VALUES (?, ?, ?)");
+	$stmt->bind_param("sss", $username, $email, $hashPassword);
+
+	//Execute the statement to see if it works
+	if($stmt->execute()) {
+		//Registration works
+		$stmt->close();
+		$stmt->store_result();
+		$mydb->close();
+		return true;
+		print_r("working here");
+	  return array("returnCode" => '1', 'message'=>"Registration Successfull for $username");
+	}
+	else {
+		//Registration fails
+		$stmt->close();
+		$stmt->close();
+		return false;
+	  return array("returnCode" => '0', 'message'=>"Registration Failed, try again");
+	}
+}
+
+
+
 function requestProcessor($request)
 {
   echo "received request".PHP_EOL;
@@ -75,19 +116,31 @@ function requestProcessor($request)
   }
   switch ($request['type'])
   {
-  case "login":
-      return doLogin($request['uname'], $request['pword']);
+    case "login":
+	    return doLogin($request['uname'], $request['pword']);
     case "validate_session":
-      return doValidate($request['sessionId']);
+	    return doValidate($request['sessionId']);
+    case 'registration':
+  	    return userRegistration($request['uname'], $request['email'], $request['pword']); 	    
   }
+
+  
   return array("returnCode" => '0', 'message'=>"Server received request and processed");
+  
 }
 
+//HOST SERVER
 $server = new rabbitMQServer("syntaxRabbitMQ.ini","syntaxServer");
 
 echo "syntaxRabbitMQServer BEGIN".PHP_EOL;
 $server->process_requests('requestProcessor');
 echo "syntaxRabbitMQServer END".PHP_EOL;
 exit();
+
+
+//Code END
+
+
+
 ?>
 
