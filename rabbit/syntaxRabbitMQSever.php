@@ -65,7 +65,7 @@ function doLogin($username,$password)
 
 }
 
-function UserRegistration($username, $email, $password)
+function userRegistration($username, $email, $password)
 {
         //DB connection
         $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
@@ -92,15 +92,15 @@ function UserRegistration($username, $email, $password)
 		$stmt->store_result();
 		$mydb->close();
 		return true;
-		print_r("working here");
-	  return array("returnCode" => '1', 'message'=>"Registration Successfull for $username");
+	//	print_r("working here");
+	  return array("returnCode" => '0', 'message'=>"Registration Successfull for $username");
 	}
 	else {
 		//Registration fails
 		$stmt->close();
 		$stmt->close();
 		return false;
-	  return array("returnCode" => '0', 'message'=>"Registration Failed, try again");
+	  return array("returnCode" => '1', 'message'=>"Registration Failed, try again");
 	}
 }
 
