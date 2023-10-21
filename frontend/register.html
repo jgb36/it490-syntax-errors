@@ -1,0 +1,54 @@
+<html>
+<script>
+
+function HandleRegistration(response)
+{
+        var text = JSON.stringify(response);
+//      document.getElementById("textResponse").innerHTML = response+"<p>";     
+        document.getElementById("textResponse").innerHTML = "response: "+text+"<p>";
+	window.location = "home.html";
+}
+
+function Register()
+{
+        event.preventDefault();
+        var username = document.getElementById('username').value;
+	var email = document.getElementById('email').value;
+        var password = document.getElementById('password').value;
+        var request = new XMLHttpRequest();
+        request.open("POST","login.php",true);
+        request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        request.onreadystatechange= function ()
+        {
+                if ((this.readyState == 4)&&(this.status == 200))
+                {
+                        HandleRegistration(this.responseText);
+                }
+		else
+		{
+			HandleRegistration(this.responseText);
+		}
+        }
+        request.send("type=register&uname="+username+ "&email=" +email+ "&pword="+password);
+}
+</script>
+<h1>Registration Page</h1>
+<body>
+<div id="textResponse">
+awaiting response
+<p>Create Your Account </p>
+<p>Already have an account? <a href = "index.html"> Back to login </a>
+</div>
+<script>
+//SendLoginRequest("kehoed","12345");
+</script>
+<form method="post">
+  <label for="username">Username:</label> 
+  <input id="username" name="username" required type="text" />
+  <label for="email">Email:</label>
+  <input id="email" name="email" required type="email" />
+  <label for="password">Password:</label>
+  <input id="password" name="password" required type="password" />
+  <input name="register" type="submit" value="Register" onclick = Register() /></form>
+</body>
+</html>

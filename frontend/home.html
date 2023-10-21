@@ -1,0 +1,27 @@
+<html>
+<script>
+function SendLogoutRequest()
+{
+        event.preventDefault();
+        //var username = document.getElementById('username').value;
+        var request = new XMLHttpRequest();
+        request.open("POST","login.php",true);
+        request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        request.send("type=logout");
+	window.location = "index.html";
+}
+</script>
+<h1>Home Page</h1>
+<body>
+<div id="textResponse">
+<p>You have successfully logged in</p>
+</div>
+<script>
+//SendLoginRequest("kehoed","12345");
+</script>
+<form method = "post">
+	<input name="logout" type="submit" value="Logout" onclick = SendLogoutRequest() />
+</form>
+
+</body>
+</html>
