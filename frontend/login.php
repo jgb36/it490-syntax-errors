@@ -22,7 +22,6 @@ switch ($request["type"])
 		'<script>console.log(JSON.parse($response)); </script>';
 		if($response['Validated'] === true)
 		{
-		        $_SESSION['id'] = $response['id'];
 		        $_SESSION['uname'] = $response['uname'];
 		        session_start();
 		}
@@ -31,6 +30,30 @@ switch ($request["type"])
 		        echo '<script>console.log(response); </script>';
 		}
 		//$response = $client->publish($request);
+		break;
+	case "register":
+                $response = "account has been successfully created";
+                $client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
+                $response = $client->send_request($request);
+                if($response['created'] === true)
+                {
+                        $_SESSION['uname'] = $response['uname'];
+                        session_start();
+                }
+                else
+                {
+                        echo '<script>console.log(response); </script>';
+                }
+                //$response = $client->publish($request);
+		break;
+	case "logout":
+		$client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
+		$request = array();
+		$request['type']="logout";
+		$request['uname']=$_Session['uname'];
+		$response = $client->publish($request);
+		session_unset();
+		session_destroy();
 		break;
 }
 echo json_encode($response);
