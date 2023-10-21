@@ -6,6 +6,7 @@ function HandleLoginResponse(response)
 	var text = JSON.stringify(response);
 //	document.getElementById("textResponse").innerHTML = response+"<p>";	
 	document.getElementById("textResponse").innerHTML = "response: "+text+"<p>";
+	window.location = "home.html";
 }
 
 function SendLoginRequest()
@@ -18,15 +19,12 @@ function SendLoginRequest()
 	request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
 	request.onreadystatechange= function ()
 	{
-		alert("in readystate");
 		if ((this.readyState == 4)&&(this.status == 200))
 		{
-			alert("222222"+JSON.stringify(this.responseText));
 			HandleLoginResponse(this.responseText);
 		}
 		else
 		{
-			alert(JSON.stringify(this.responseText));
 			HandleLoginResponse(this.responseText);
 		}
 	}
@@ -38,6 +36,8 @@ function SendLoginRequest()
 <body>
 <div id="textResponse">
 awaiting response
+<p>Login</p>
+<p>Haven't signed up yet? <a href = "register.html"> Click here </a>
 </div>
 <script>
 //SendLoginRequest("kehoed","12345");
