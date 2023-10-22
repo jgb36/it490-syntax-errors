@@ -42,7 +42,6 @@ function doLogin($username,$password)
 
 		//Calls sessionAdd
                 	sessionAdd($username);
-
 			return $request;		
 		}
 
