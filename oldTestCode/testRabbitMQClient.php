@@ -5,24 +5,21 @@ require_once('get_host_info.inc');
 require_once('rabbitMQLib.inc');
 
 $client = new rabbitMQClient("testRabbitMQ.ini","testServer");
-
-
-$request = array();
-$request['type'] = "Login";
-$request['username'] = "jay";
-$request['password'] = "bestPWNoPWisBetter";
-$request['message'] = $msg;
-print_r($response = $client->send_request($request));
-if($response['Validated'] = 'true')
+if (isset($argv[1]))
 {
-	$_SESSION['id'] = $response['id'];
-        $_SESSION['username'] = $response['username'];
-	session_start();
+  $msg = $argv[1];
 }
 else
 {
-	echo "Invalid Session ";
+  $msg = "test message";
 }
+
+$request = array();
+$request['type'] = "Login";
+$request['username'] = "steve";
+$request['password'] = "password";
+$request['message'] = $msg;
+print_r($response = $client->send_request($request));
 $response = $client->publish($request);
 
 echo "client received response: ".PHP_EOL;
