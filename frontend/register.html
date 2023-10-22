@@ -1,12 +1,38 @@
 <html>
 <script>
+HandleValidation()
+function HandleValidation()
+{
+        var session = new XMLHttpRequest();
+        session.open("POST","login.php",true);
+        session.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        session.onreadystatechange= function ()
+        {
+                if ((this.readyState == 4)&&(this.status == 200))
+                {
+                        var t = JSON.stringify(this.responseText);
+                        document.getElementById("textResponse").innerHTML = "response: "+t+"<p>";
+                        const o = JSON.parse(this.responseText);
+                        if(o.Validated == true)
+                        {
+                                window.location = "home.html";
+                        }
+
+                }
+        }
+        session.send("type=validate_session");
+}
 
 function HandleRegistration(response)
 {
         var text = JSON.stringify(response);
+	document.getElementById("textResponse").innerHTML = "response: "+text+"<p>";
+	const obj = JSON.parse(response);
 //      document.getElementById("textResponse").innerHTML = response+"<p>";     
-        document.getElementById("textResponse").innerHTML = "response: "+text+"<p>";
-	window.location = "home.html";
+	if(obj.created == true)
+        {
+                window.location = "home.html";
+        }
 }
 
 function Register()
@@ -24,10 +50,6 @@ function Register()
                 {
                         HandleRegistration(this.responseText);
                 }
-		else
-		{
-			HandleRegistration(this.responseText);
-		}
         }
         request.send("type=register&uname="+username+ "&email=" +email+ "&pword="+password);
 }
