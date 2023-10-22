@@ -39,6 +39,10 @@ function doLogin($username,$password)
 			$request['id'] = $id;
 			$request['uname'] = $username;
 			print_r($request);
+
+		//Calls sessionAdd
+                	sessionAdd($username);
+
 			return $request;		
 		}
 
@@ -97,8 +101,9 @@ function userRegistration($username, $email, $password)
 		$mydb->close();
 		$request['created'] = 'true';
 		$request['uname'] = 'true';
-	//	return true;
-	//	print_r("working here");
+
+	//Calls sessionAdd
+		sessionAdd($username);
 	  return array('created' => true,'uname' => true, 'message'=>"Registration Successfull for $username");
 	}
 	else {
@@ -110,6 +115,73 @@ function userRegistration($username, $email, $password)
 	  return array('created' => false, 'message'=>"Registration Failed, try again");
 	}
 }
+
+
+//Session add
+function sessionAdd($username) {
+
+	//DB connection
+        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+
+        if ($mydb->errno != 0)
+        {
+                echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+                exit(0);
+        }
+
+	echo "successfully connected to database".PHP_EOL;
+
+	$creationDate = time();
+//        $creationDate = (string)$creationDate;
+	$date = date('Y-m-d H:i:s', $creationDate);
+
+	
+	//Inserts the user info into the DB
+        $stmt = $mydb->prepare("INSERT INTO sessions(userName, creationDate) VALUES (?, ?)");
+	$stmt->bind_param("ss",$username, $date);
+	if($stmt->execute()) {
+//		$stmt.close();
+//		$mydb.close();
+	}
+	else {
+		echo "failed to create session for $username: ". $mydb->error . PHP_EOL;
+	}
+
+} //function add end bracket
+
+
+
+//function delete
+function sessionDelete($username) {
+
+        //DB connection
+        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+
+        if ($mydb->errno != 0)
+        {
+                echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+                exit(0);
+        }
+
+        echo "successfully connected to database".PHP_EOL;
+
+
+        //DELETES the user info into the DB
+	$stmt = $mydb->prepare("DELETE FROM sessions WHERE userName = ?");
+	$stmt->bind_param("s", $username);
+        if($stmt->execute()) {
+                $stmt.close();
+		$mydb.close();
+        }
+        else {
+                echo "failed to delete session for $username: ". $mydb->error . PHP_EOL;
+        }
+
+
+} //function del end bracket
+
+
+
 
 
 
