@@ -14,7 +14,7 @@ function doLogin($username,$password)
 		exit(0);
 	}	
 
-	echo "successfully connected to database".PHP_EOL;
+	echo "successfully connected to database(login)".PHP_EOL;
 
 	// Hashes the Password
 	$hashPassword = password_hash($password, PASSWORD_DEFAULT);
@@ -39,6 +39,9 @@ function doLogin($username,$password)
 			$request['id'] = $id;
 			$request['uname'] = $username;
 			print_r($request);
+
+		//Calls sessionAdd
+                	sessionAdd($username);
 			return $request;		
 		}
 
@@ -80,39 +83,158 @@ function userRegistration($username, $email, $password)
                 exit(0);
         }
 
-	echo "successfully connected to database".PHP_EOL;
+	echo "successfully connected to database(regis)".PHP_EOL;
 
-	//Hash the password for security
-	$hashPassword = password_hash($password, PASSWORD_DEFAULT);
+	//Check for duplicate entry
+	$checkDups = $mydb->prepare("SELECT *  FROM syntaxUsers WHERE name = ? OR email = ?");
+	$checkDups->bind_param("ss", $username, $email);
+	$checkDups->execute();
 
-	//Inserts the user info into the DB
-	$stmt = $mydb->prepare("INSERT INTO syntaxUsers(name, email, password) VALUES (?, ?, ?)");
-	$stmt->bind_param("sss", $username, $email, $hashPassword);
+	$dup_DB_Result = $checkDups->get_result();
+
+	//Check the database data
+	if($dup_DB_Result-> num_rows > 0) {	
+//		$checkDups.close();
+	return array('created' => false, 'message'=>"Registration Failed, try again");
+	
+	
+
+	} 
+
+	else {
+//		$checkDups.close();
+
+		//Hash the password for security
+		$hashPassword = password_hash($password, PASSWORD_DEFAULT);
+
+		//Inserts the user info into the DB
+		$stmt = $mydb->prepare("INSERT INTO syntaxUsers(name, email, password) VALUES (?, ?, ?)");
+		$stmt->bind_param("sss", $username, $email, $hashPassword);
 
 	//Execute the statement to see if it works
-	if($stmt->execute()) {
+		if($stmt->execute()) {
 		//Registration works
-		$stmt->close();
+			$stmt->close();
 	//	$stmt->store_result();
-		$mydb->close();
-		$request['created'] = 'true';
-		$request['uname'] = 'true';
-	//	return true;
-	//	print_r("working here");
-	  return array('created' => true,'uname' => true, 'message'=>"Registration Successfull for $username");
-	}
-	else {
-		//Registration fails
-		$stmt->close();
-		$stmt->close();
-		$request['created'] = 'false';
-	//	return false;
-	  return array('created' => false, 'message'=>"Registration Failed, try again");
+			$mydb->close();
+			$request['created'] = 'true';
+			$request['uname'] = 'true';
+
+		//Calls sessionAdd
+			sessionAdd($username);
+	  	return array('created' => true,'uname' => true, 'message'=>"Registration Successfull for $username");
+		}	
+
+		else {
+			//Registration fails
+			$stmt->close();
+			$stmt->close();
+			$request['created'] = 'false';
+		  return array('created' => false, 'message'=>"Registration Failed, try again");
+		}
+	
 	}
 }
 
 
+//Session add
+function sessionAdd($username) {
 
+	//DB connection
+        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+
+        if ($mydb->errno != 0)
+        {
+                echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+                exit(0);
+        }
+
+	echo "successfully connected to database(add)".PHP_EOL;
+
+	$creationDate = time();
+//        $creationDate = (string)$creationDate;
+	$date = date('Y-m-d H:i:s', $creationDate);
+
+	
+	//Inserts the user info into the DB
+        $stmt = $mydb->prepare("INSERT INTO sessions(userName, creationDate) VALUES (?, ?)");
+	$stmt->bind_param("ss",$username, $date);
+	if($stmt->execute()) {
+//		$stmt.close();
+//		$mydb.close();
+	}
+	else {
+		echo "failed to create session for $username: ". $mydb->error . PHP_EOL;
+	}
+
+} //function add end bracket
+
+
+
+//function delete
+function sessionDelete($username) {
+
+        //DB connection
+        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+
+        if ($mydb->errno != 0)
+        {
+                echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+                exit(0);
+        }
+
+        echo "successfully connected to database(del)".PHP_EOL;
+
+
+        //DELETES the user info into the DB
+	$stmt = $mydb->prepare("DELETE FROM sessions WHERE userName = ?");
+	$stmt->bind_param("s", $username);
+	if($stmt->execute()) {	
+//		$stmt->store_result();
+//              $stmt.close();
+//		$mydb.close();
+        }
+        else {
+                echo "failed to delete session for $username: ". $mydb->error . PHP_EOL;
+        }
+
+
+} //function del end bracket
+
+
+//function validation
+function doValidate($username)
+{
+        //DB connection
+        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+
+        if ($mydb->errno != 0)
+        {
+                echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+                exit(0);
+        }
+
+        echo "successfully connected to database(valid)".PHP_EOL;
+
+        //Check for duplicate entry
+        $checkDups = $mydb->prepare("SELECT *  FROM sessions WHERE userName = ?");
+        $checkDups->bind_param("s", $username);
+        $checkDups->execute();
+
+        $dup_DB_Result = $checkDups->get_result();
+
+        //Check the database data
+        if($dup_DB_Result-> num_rows > 0) {
+//              $checkDups.close();
+	return array('Validated' => true, 'message'=>"Session is Active");
+
+
+
+	}
+}
+
+
+// main function
 function requestProcessor($request)
 {
   echo "received request".PHP_EOL;
@@ -126,9 +248,11 @@ function requestProcessor($request)
     case "login":
 	    return doLogin($request['uname'], $request['pword']);
     case "validate_session":
-	    return doValidate($request['sessionId']);
+	    return doValidate($request['uname']);
     case 'register':
-  	    return userRegistration($request['uname'], $request['email'], $request['pword']); 	    
+	    return userRegistration($request['uname'], $request['email'], $request['pword']);
+    case 'logout':
+	    return sessionDelete($request['uname']); 	    
   }
 
   
