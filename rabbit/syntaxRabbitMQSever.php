@@ -14,7 +14,7 @@ function doLogin($username,$password)
 		exit(0);
 	}	
 
-	echo "successfully connected to database".PHP_EOL;
+	echo "successfully connected to database(login)".PHP_EOL;
 
 	// Hashes the Password
 	$hashPassword = password_hash($password, PASSWORD_DEFAULT);
@@ -83,7 +83,7 @@ function userRegistration($username, $email, $password)
                 exit(0);
         }
 
-	echo "successfully connected to database".PHP_EOL;
+	echo "successfully connected to database(regis)".PHP_EOL;
 
 	//Check for duplicate entry
 	$checkDups = $mydb->prepare("SELECT *  FROM syntaxUsers WHERE name = ? OR email = ?");
@@ -149,7 +149,7 @@ function sessionAdd($username) {
                 exit(0);
         }
 
-	echo "successfully connected to database".PHP_EOL;
+	echo "successfully connected to database(add)".PHP_EOL;
 
 	$creationDate = time();
 //        $creationDate = (string)$creationDate;
@@ -183,15 +183,16 @@ function sessionDelete($username) {
                 exit(0);
         }
 
-        echo "successfully connected to database".PHP_EOL;
+        echo "successfully connected to database(del)".PHP_EOL;
 
 
         //DELETES the user info into the DB
 	$stmt = $mydb->prepare("DELETE FROM sessions WHERE userName = ?");
 	$stmt->bind_param("s", $username);
-        if($stmt->execute()) {
-                $stmt.close();
-		$mydb.close();
+	if($stmt->execute()) {	
+//		$stmt->store_result();
+//              $stmt.close();
+//		$mydb.close();
         }
         else {
                 echo "failed to delete session for $username: ". $mydb->error . PHP_EOL;
@@ -213,7 +214,7 @@ function doValidate($username)
                 exit(0);
         }
 
-        echo "successfully connected to database".PHP_EOL;
+        echo "successfully connected to database(valid)".PHP_EOL;
 
         //Check for duplicate entry
         $checkDups = $mydb->prepare("SELECT *  FROM sessions WHERE userName = ?");
@@ -249,7 +250,9 @@ function requestProcessor($request)
     case "validate_session":
 	    return doValidate($request['uname']);
     case 'register':
-  	    return userRegistration($request['uname'], $request['email'], $request['pword']); 	    
+	    return userRegistration($request['uname'], $request['email'], $request['pword']);
+    case 'logout':
+	    return sessionDelete($request['uname']); 	    
   }
 
   
