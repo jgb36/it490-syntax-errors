@@ -1,11 +1,38 @@
 <html>
 <script>
+HandleValidation()
+function HandleValidation()
+{
+	var session = new XMLHttpRequest();
+	session.open("POST","login.php",true);
+        session.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+	session.onreadystatechange= function ()
+        {
+                if ((this.readyState == 4)&&(this.status == 200))
+                {
+			var t = JSON.stringify(this.responseText);
+			document.getElementById("textResponse").innerHTML = "response: "+t+"<p>";
+         		const o = JSON.parse(this.responseText);
+               		if(o.Validated == true)
+		        {
+               			window.location = "home.html";
+        		}
+
+		}
+        }
+	session.send("type=validate_session");
+}
 
 function HandleLoginResponse(response)
 {
 	var text = JSON.stringify(response);
+	const obj = JSON.parse(response);
 //	document.getElementById("textResponse").innerHTML = response+"<p>";	
 	document.getElementById("textResponse").innerHTML = "response: "+text+"<p>";
+	if(obj.Validated == true)
+	{
+		window.location = "home.html";
+	}
 }
 
 function SendLoginRequest()
@@ -18,15 +45,8 @@ function SendLoginRequest()
 	request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
 	request.onreadystatechange= function ()
 	{
-		alert("in readystate");
 		if ((this.readyState == 4)&&(this.status == 200))
 		{
-			alert("222222"+JSON.stringify(this.responseText));
-			HandleLoginResponse(this.responseText);
-		}
-		else
-		{
-			alert(JSON.stringify(this.responseText));
 			HandleLoginResponse(this.responseText);
 		}
 	}
@@ -34,10 +54,12 @@ function SendLoginRequest()
 }
 </script>
 
-<h1>login page</h1>
+<h1>Login Page</h1>
 <body>
 <div id="textResponse">
 awaiting response
+<p>Login</p>
+<p>Haven't signed up yet? <a href = "register.html"> Click here </a>
 </div>
 <script>
 //SendLoginRequest("kehoed","12345");
