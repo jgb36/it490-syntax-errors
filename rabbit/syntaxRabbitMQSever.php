@@ -216,7 +216,7 @@ function doValidate($username)
         echo "successfully connected to database".PHP_EOL;
 
         //Check for duplicate entry
-        $checkDups = $mydb->prepare("SELECT *  FROM sessions WHERE name = ?");
+        $checkDups = $mydb->prepare("SELECT *  FROM sessions WHERE userName = ?");
         $checkDups->bind_param("s", $username);
         $checkDups->execute();
 
