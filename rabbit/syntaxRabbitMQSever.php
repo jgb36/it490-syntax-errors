@@ -117,12 +117,12 @@ function userRegistration($username, $email, $password)
 			$stmt->close();
 	//	$stmt->store_result();
 			$mydb->close();
-			$request['created'] = 'true';
-			$request['uname'] = 'true';
+	//		$request['created'] = 'true';
+	//		$request['uname'] = 'true';
 
 		//Calls sessionAdd
 			sessionAdd($username);
-	  	return array('created' => true,'uname' => true, 'message'=>"Registration Successfull for $username");
+	  	return array('created' => true,'uname' => $username, 'message'=>"Registration Successfull for $username");
 		}	
 
 		else {
