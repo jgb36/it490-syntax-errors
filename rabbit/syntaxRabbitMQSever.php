@@ -6,7 +6,7 @@ require_once('rabbitMQLib.inc');
 
 function doLogin($username,$password)
 {
-    	$mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+    	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
 	if ($mydb->errno != 0)
 	{
@@ -48,7 +48,7 @@ function doLogin($username,$password)
 		else{
 			 $request = array();
 			 $request['Validated'] = false;
-			 $request['1'] = 'one';
+			 
 			 print_r($request);
 		      	 return $request; 
 		}
@@ -75,7 +75,7 @@ function doLogin($username,$password)
 function userRegistration($username, $email, $password)
 {
         //DB connection
-        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
         if ($mydb->errno != 0)
         {
@@ -141,7 +141,7 @@ function userRegistration($username, $email, $password)
 function sessionAdd($username) {
 
 	//DB connection
-        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
         if ($mydb->errno != 0)
         {
@@ -175,7 +175,7 @@ function sessionAdd($username) {
 function sessionDelete($username) {
 
         //DB connection
-        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
         if ($mydb->errno != 0)
         {
@@ -206,7 +206,7 @@ function sessionDelete($username) {
 function doValidate($username)
 {
         //DB connection
-        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
         if ($mydb->errno != 0)
         {
@@ -248,7 +248,16 @@ function requestProcessor($request)
     case "login":
 	    return doLogin($request['uname'], $request['pword']);
     case "validate_session":
-	    return doValidate($request['uname']);
+	    if (isset($request['uname'])){
+		return doValidate($request['uname']);
+	    }
+	    else
+	    {
+		print_r(array('Validated' => false, 'message'=>"Session is Not Active"));
+
+		return array('Validated' => false, 'message'=>"Session is Not Active");
+
+	    }
     case 'register':
 	    return userRegistration($request['uname'], $request['email'], $request['pword']);
     case 'logout':
@@ -274,4 +283,5 @@ exit();
 
 
 ?>
+
 
