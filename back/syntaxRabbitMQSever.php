@@ -4,6 +4,7 @@ require_once('path.inc');
 require_once('get_host_info.inc');
 require_once('rabbitMQLib.inc');
 
+/*
 function doLogin($username,$password)
 {
     	$mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
@@ -232,6 +233,27 @@ function doValidate($username)
 
 	}
 }
+ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // main function

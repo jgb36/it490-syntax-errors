@@ -22,44 +22,16 @@ switch ($request["type"])
 		'<script>console.log(JSON.parse($response)); </script>';
 		if($response['Validated'] === true)
 		{
-			session_start();
+		        $_SESSION['id'] = $response['id'];
 		        $_SESSION['uname'] = $response['uname'];
-		        //session_start();
+		        session_start();
+		}
+		else
+		{
+		        echo '<script>console.log(response); </script>';
 		}
 		//$response = $client->publish($request);
 		break;
-	case "register":
-                $response = "account has been successfully created";
-                $client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
-                $response = $client->send_request($request);
-                if($response['created'] === true)
-                {
-                        $_SESSION['uname'] = $response['uname'];
-                        session_start();
-                }
-                //$response = $client->publish($request);
-		break;
-	case "logout":
-		$client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
-		echo "in logout case";
-		session_start();
-		$request = array();
-		$request['type']="logout";
-		$request['uname']=$_SESSION['uname'];
-		$response = $client->send_request($request);
-		session_unset();
-		session_destroy();
-		break;
-	case "validate_session":
-		$client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
-		$request['type'] = "validate_session";
-		session_start();
-		if(isset($_SESSION['uname']))
-		{
-			$request['uname']=$_SESSION['uname'];
-			$response = $client->send_request($request);
-		}
-                break;
 }
 echo json_encode($response);
 exit(0);
