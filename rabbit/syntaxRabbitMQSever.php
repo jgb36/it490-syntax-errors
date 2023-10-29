@@ -305,7 +305,46 @@ function doValidate($username)
 	}
 
 }
+function createLeague($username, $leagueName){
+       $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
 
+       $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+       $stmt = $mydb->prepare("INSERT INTO league(ownerName, leagueName) VALUES ( ?, ?)");
+       $stmt->bind_param("ss", $username, $leagueName);
+       if($stmt->execute()) {
+	       //Registration works
+	       $lastInsertedPK = $mydb->insert_id;
+	       echo "inserted id is: $lastInsertedPK";
+	       $query2 = "INSERT INTO participants (playerName, leagueID) VALUES (?, ?)";
+	       $stmt2 = $mydb->prepare($query2);
+	       $stmt2->bind_param("si", $username, $lastInsertedPK);
+	       if($stmt2->execute()){
+		return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
+	       }
+	       else{
+		$log = array();
+                $log['where']="listener: createLeague";
+                $log['error']="failed to create league for $username:   1 ";
+                $logger->publish($log);
+                return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
+                echo "failed to create league for $username: ". $mydb->error . PHP_EOL;
+	       }
+               
+    
+         }else {
+                $log = array();
+                $log['where']="listener: createLeague";
+                $log['error']="failed to create league for $username:  2 ";
+                $logger->publish($log);
+                return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
+                echo "failed to create league for $username: ". $mydb->error . PHP_EOL;
+        }
+
+
+	
+
+
+}
 
 // main function
 function requestProcessor($request)
@@ -339,7 +378,10 @@ function requestProcessor($request)
     case 'register':
 	    return userRegistration($request['uname'], $request['email'], $request['pword']);
     case 'logout':
-	    return sessionDelete($request['uname']); 	    
+	    return sessionDelete($request['uname']);
+    case 'createLeague':
+	    return createLeague($request['uname'],$request['leagueName']);
+    	    
   }
 
   $log = array();
