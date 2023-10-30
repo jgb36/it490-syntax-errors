@@ -1,0 +1,39 @@
+<html>
+<script>
+HandleValidation()
+function HandleValidation()
+{
+        var session = new XMLHttpRequest();
+        session.open("POST","login.php",true);
+        session.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        session.onreadystatechange= function ()
+        {
+                if ((this.readyState == 4)&&(this.status == 200))
+                {
+                        var t = JSON.stringify(this.responseText);
+                        document.getElementById("textResponse").innerHTML = "response: "+t+"<p>";
+                        const o = JSON.parse(this.responseText);
+                        if(o.Validated != true)
+                        {
+                                window.location = "index.html";
+                        }
+
+                }
+        }
+        session.send("type=validate_session");
+}
+</script>
+
+<h1>League View</h1>
+<body>
+<div id="textResponse">
+awaiting response
+</div>
+<div>
+<p>View your Leagues Below</p>
+</div>
+<script>
+//SendLoginRequest("kehoed","12345");
+</script>
+</html>
+

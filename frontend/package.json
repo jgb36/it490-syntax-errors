@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "espn-fantasy-football-api": "^1.6.1"
+  }
+}
