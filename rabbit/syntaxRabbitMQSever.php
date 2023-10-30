@@ -6,11 +6,17 @@ require_once('rabbitMQLib.inc');
 
 function doLogin($username,$password)
 {
-    	$mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+	$logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+
+    	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
 	if ($mydb->errno != 0)
 	{
 		echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+		$log = array();
+                $log['where']="listener: doLogin";
+                $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
+		$logger->publish($log);
 		exit(0);
 	}	
 
@@ -28,6 +34,11 @@ function doLogin($username,$password)
 	{
 		echo "failed to execute query:".PHP_EOL;
 		echo __FILE__.':'.__LINE__.":error: ".$mydb->error.PHP_EOL;
+		$log = array();
+                $log['where']="listener: doLogin";
+                $log['error']="failed to execute query: ". $mydb->error . PHP_EOL;
+                $logger->publish($log);
+
 		exit(0);
 	}
 	if($stmt->num_rows>0){
@@ -46,41 +57,50 @@ function doLogin($username,$password)
 		}
 
 		else{
-			 $request = array();
-			 $request['Validated'] = false;
-			 $request['1'] = 'one';
-			 print_r($request);
-		      	 return $request; 
+			 $log = array();
+			 $log['Validated'] = false;
+
+              	         $log['where']="listener: doLogin";
+        	         $log['error']="password failed to verify";
+        	         $logger->publish($log);
+	                 print_r($log);
+
+		      	 return $log; 
 		}
 	 
 	}
 	else{
-		$request = array();
-		$request['Validated'] = 'false';
-		$request['2'] = 'two';
-                         print_r($request);
-                         return $request;
+		$log = array();
+                $log['Validated'] = false;
 
+                $log['where']="listener: doLogin";
+                $log['error']="password failed to verify";
+                $logger->publish($log);
+                print_r($log);
 
-	}
-	$request = array();
-                $request['Validated'] = 'false';
-                $request['2'] = 'two';
-                         print_r($request);
-                         return $request;
+                return $log;  
+
+}
 
 
 }
 
 function userRegistration($username, $email, $password)
 {
-        //DB connection
-        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+	//DB connection
+        $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+
+        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
         if ($mydb->errno != 0)
         {
                 echo "failed to connect to database: ". $mydb->error . PHP_EOL;
-                exit(0);
+		$log = array();
+                $log['where']="listener: userRegistration";
+                $log['error']="failed to connect to databse: ". $mydb->error . PHP_EOL;
+                $logger->publish($log);
+
+		exit(0);
         }
 
 	echo "successfully connected to database(regis)".PHP_EOL;
@@ -94,7 +114,12 @@ function userRegistration($username, $email, $password)
 
 	//Check the database data
 	if($dup_DB_Result-> num_rows > 0) {	
-//		$checkDups.close();
+		//		$checkDups.close();
+		$log = array();
+                $log['where']="listener: userRegistration";
+                $log['error']="existing account with given name: ";
+                $logger->publish($log);
+
 	return array('created' => false, 'message'=>"Registration Failed, try again");
 	
 	
@@ -117,19 +142,24 @@ function userRegistration($username, $email, $password)
 			$stmt->close();
 	//	$stmt->store_result();
 			$mydb->close();
-			$request['created'] = 'true';
-			$request['uname'] = 'true';
+	//		$request['created'] = 'true';
+	//		$request['uname'] = 'true';
 
 		//Calls sessionAdd
 			sessionAdd($username);
-	  	return array('created' => true,'uname' => true, 'message'=>"Registration Successfull for $username");
+	  	return array('created' => true,'uname' => $username, 'message'=>"Registration Successfull for $username");
 		}	
 
 		else {
 			//Registration fails
 			$stmt->close();
-			$stmt->close();
-			$request['created'] = 'false';
+			
+			
+			$log = array();
+        	        $log['where']="listener: userRegistration";
+        	        $log['error']="Registration Failed When Inserting ". $mydb->error . PHP_EOL;
+	                $logger->publish($log);
+
 		  return array('created' => false, 'message'=>"Registration Failed, try again");
 		}
 	
@@ -141,12 +171,20 @@ function userRegistration($username, $email, $password)
 function sessionAdd($username) {
 
 	//DB connection
-        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+	
+        $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+
+        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
         if ($mydb->errno != 0)
         {
                 echo "failed to connect to database: ". $mydb->error . PHP_EOL;
-                exit(0);
+		$log = array();
+                $log['where']="listener: doLogin";
+                $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
+                $logger->publish($log);
+
+		exit(0);
         }
 
 	echo "successfully connected to database(add)".PHP_EOL;
@@ -164,6 +202,11 @@ function sessionAdd($username) {
 //		$mydb.close();
 	}
 	else {
+		$log = array();
+                $log['where']="listener: sessionAdd";
+                $log['error']="failed to insert session into db: ". $mydb->error . PHP_EOL;
+                $logger->publish($log);
+
 		echo "failed to create session for $username: ". $mydb->error . PHP_EOL;
 	}
 
@@ -174,13 +217,20 @@ function sessionAdd($username) {
 //function delete
 function sessionDelete($username) {
 
-        //DB connection
-        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+	//DB connection
+        $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+
+        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
         if ($mydb->errno != 0)
         {
                 echo "failed to connect to database: ". $mydb->error . PHP_EOL;
-                exit(0);
+		$log = array();
+                $log['where']="listener: sessionDelete";
+                $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
+                $logger->publish($log);
+
+		exit(0);
         }
 
         echo "successfully connected to database(del)".PHP_EOL;
@@ -194,7 +244,12 @@ function sessionDelete($username) {
 //              $stmt.close();
 //		$mydb.close();
         }
-        else {
+	else {
+		$log = array();
+                $log['where']="listener: sessionDelete";
+                $log['error']="failed to delete session for $username: ";
+                $logger->publish($log);
+
                 echo "failed to delete session for $username: ". $mydb->error . PHP_EOL;
         }
 
@@ -205,12 +260,19 @@ function sessionDelete($username) {
 //function validation
 function doValidate($username)
 {
-        //DB connection
-        $mydb = new mysqli('25.3.222.177','jay','syn490-jay-errors','syntaxErrors490');
+	//DB connection
+        $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+
+        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
         if ($mydb->errno != 0)
         {
-                echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+		echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+		$log = array();
+                $log['where']="listener: doValidate";
+                $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL ;
+                $logger->publish($log);
+
                 exit(0);
         }
 
@@ -226,11 +288,22 @@ function doValidate($username)
         //Check the database data
         if($dup_DB_Result-> num_rows > 0) {
 //              $checkDups.close();
-	return array('Validated' => true, 'message'=>"Session is Active");
+		return array('Validated' => true, 'message'=>"Session is Active");
 
 
 
 	}
+	else{
+		$log = array();
+                $log['where']="listener: doValidate";
+                $log['error']="failed to locate a session: " ;
+                $logger->publish($log);
+
+
+
+		return array('Validated' => false, 'message'=>"No Sesssion Found");
+	}
+
 }
 
 
@@ -241,6 +314,11 @@ function requestProcessor($request)
   var_dump($request);
   if(!isset($request['type']))
   {
+	  $log = array();
+          $log['where']="listener: requestProcessor";
+          $log['error']="Message type not found" ;
+          $logger->publish($log);
+
     return "ERROR: unsupported message type";
   }
   switch ($request['type'])
@@ -248,14 +326,27 @@ function requestProcessor($request)
     case "login":
 	    return doLogin($request['uname'], $request['pword']);
     case "validate_session":
-	    return doValidate($request['uname']);
+	    if (isset($request['uname'])){
+		return doValidate($request['uname']);
+	    }
+	    else
+	    {
+		print_r(array('Validated' => false, 'message'=>"Session is Not Active"));
+
+		return array('Validated' => false, 'message'=>"Session is Not Active");
+
+	    }
     case 'register':
 	    return userRegistration($request['uname'], $request['email'], $request['pword']);
     case 'logout':
 	    return sessionDelete($request['uname']); 	    
   }
 
-  
+  $log = array();
+  $log['where']="listener: requestProcessor";
+  $log['error']="Unsupported message type" ;
+  $logger->publish($log);
+
   return array("returnCode" => '0', 'message'=>"Server received request and processed");
   
 }
@@ -274,4 +365,5 @@ exit();
 
 
 ?>
+
 
