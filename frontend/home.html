@@ -17,12 +17,11 @@ function HandleValidation()
                         {
                                 SendLogoutRequest();
                         }
-
+		leagueLoader()
                 }
         }
         session.send("type=validate_session");
 }
-
 function SendLogoutRequest()
 {
         event.preventDefault();
@@ -49,15 +48,59 @@ function SendLogoutRequest()
 <div id="textResponse">
 <p>You have successfully logged in</p>
 </div>
-<p>Click here to <a href = "index.html"> login </a>
-<p>Click here to <a href = "register.html"> register </a>
-
+<p>Click here to <a href = "league_creation.html"> Create a League </a>
 <script>
 //SendLoginRequest("kehoed","12345");
 </script>
 <form method = "post">
 	<input name="logout" type="submit" value="Logout" onclick = SendLogoutRequest() />
 </form>
+    <script>
+	//leagueLoader()
+        function leagueLoader() {
+            var xhr = new XMLHttpRequest();
+	    xhr.open('POST', 'league.php', true);
+	    xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+		    var t = JSON.stringify(this.responseText);
+		    document.getElementById("textResponse").innerHTML = "response: "+t+"<p>";
+                    var leagues = JSON.parse(xhr.responseText);
 
+                    if (leagues.error) {
+                        console.error(leagues.error);
+                        return;
+                    }
+
+                    var listContainer = document.getElementById('league-list');
+
+                    leagues.forEach(function (league) {
+                        var listItem = document.createElement('li');
+
+                        // Display league data
+                        listItem.textContent = 'Name: ' + league.leagueName +
+                            ', Draft Start: ' + (league.draftStart ? 'Yes' : 'No') +
+                            ', Draft Done: ' + (league.draftDone ? 'Yes' : 'No');
+
+                        // Add an onclick event to redirect to another page when the league is clicked
+                        listItem.onclick = function () {
+                            window.location.href = 'league.php?leagueName=' + league.leagueName;
+                        }
+
+                        listContainer.appendChild(listItem);
+                    });
+                }
+		}
+            //xhr.open('GET', 'league.php', true);
+            xhr.send("type=leagueList");
+       
+}
+    </script>
+<div id="textResponse">
+     <h1>My Fantasy Football Leagues</h1>
+    <ul id="league-list">
+        <!-- Leagues will be displayed here dynamically -->
+    </ul>
+    </div>
 </body>
 </html>

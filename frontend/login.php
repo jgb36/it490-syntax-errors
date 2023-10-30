@@ -33,9 +33,10 @@ switch ($request["type"])
                 $client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
                 $response = $client->send_request($request);
                 if($response['created'] === true)
-                {
+		{
+			session_start();
                         $_SESSION['uname'] = $response['uname'];
-                        session_start();
+                        //session_start();
                 }
                 //$response = $client->publish($request);
 		break;
@@ -58,6 +59,12 @@ switch ($request["type"])
 		{
 			$request['uname']=$_SESSION['uname'];
 			$response = $client->send_request($request);
+		}
+		else
+		{
+			$request = array();
+			$request['type'] = "validate_session";
+		        $response = $client->send_request($request);	
 		}
                 break;
 }
