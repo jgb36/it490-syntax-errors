@@ -1,0 +1,73 @@
+<html>
+<script>
+HandleValidation()
+function HandleValidation()
+{
+        var session = new XMLHttpRequest();
+        session.open("POST","login.php",true);
+        session.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        session.onreadystatechange= function ()
+        {
+                if ((this.readyState == 4)&&(this.status == 200))
+                {
+                        var t = JSON.stringify(this.responseText);
+                        document.getElementById("textResponse").innerHTML = "response: "+t+"<p>";
+                        const o = JSON.parse(this.responseText);
+                        if(o.Validated != true)
+                        {
+                                window.location = "index.html";
+                        }
+
+                }
+        }
+        session.send("type=validate_session");
+}
+
+function HandleCreateResponse(response)
+{
+        var text = JSON.stringify(response);
+        const obj = JSON.parse(response);
+        document.getElementById("textResponse").innerHTML = response+"<p>";     
+        //document.getElementById("textResponse").innerHTML = "response: "+text+"<p>";
+        if(obj.createLeague == true)
+        {
+                window.location = "home.html";
+        }
+}
+
+
+function SendCreateRequest()
+{
+        event.preventDefault();
+        var leagueName = document.getElementById('leagueName').value; 
+        var request = new XMLHttpRequest();
+        request.open("POST","league.php",true);
+        request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        request.onreadystatechange= function ()
+        {
+                if ((this.readyState == 4)&&(this.status == 200))
+                {
+                        HandleCreateResponse(this.responseText);
+                }
+        }
+        request.send("type=createLeague&leagueName="+leagueName);
+}
+
+</script>
+<h1>Create a League</h1>
+<body>
+<div id="textResponse">
+awaiting response
+</div>
+<div>
+<p>Register your league below</p>
+</div>
+<script>
+//SendLoginRequest("kehoed","12345");
+</script>
+<form method="post">
+  <label for="leagueName">League Name: </label>
+  <input id="leagueName" name="leagueName" required type="text" />
+  <input name="createLeague" type="submit" value="Create League" onclick = SendCreateRequest() /> </form>
+</body>
+</html>
