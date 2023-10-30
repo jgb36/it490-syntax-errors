@@ -25,27 +25,27 @@ $teamsID = [
 ];
 
 // Sportradar API URL
-$apiURL = "https://api.sportradar.com/nfl/official/trial/v7/en/seasons/2023/REG/teams/$teamID/statistics.json?api_key=z58e5mh8q6rk8afnbczdj6xk";
-try
-{
+// $apiURL = "https://api.sportradar.com/nfl/official/trial/v7/en/seasons/2023/REG/teams/$teamsID/statistics.json?api_key=z58e5mh8q6rk8afnbczdj6xk";
+//try
+//{
     // Initialize the cURL session to make a request to the Sportradar API
-	$ch = curl_init($apiURL);
+   //	$ch = curl_init($apiURL);
 
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+//	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     // Execute the API request
-    $apiResponse = curl_exec($ch);
+  //  $apiResponse = curl_exec($ch);
 
     // Check for errors in the API response
-    if ($apiResponse === false) {
-        throw new Exception('cURL error: ' . curl_error($ch));
-    }
+   // if ($apiResponse === false) {
+     //   throw new Exception('cURL error: ' . curl_error($ch));
+   // }
 
     // Close the cURL session
-    curl_close($ch);
+   // curl_close($ch);
 
     // Assuming the API response is JSON data, you can decode it
-    $apiData = json_decode($apiResponse, true);
+   // $apiData = json_decode($apiResponse, true);
 
 //  echo "Team: " . $teamData['market'] . " " . $teamData['name'] . "<br>";
 //  echo "Abbreviation: " . $teamData['alias'] . "<br>";
@@ -61,11 +61,43 @@ try
 $team = [];
 $teamNameAdded = false;
 
+for ($i = 0; $i < count($teamsID); $i++) {
+	$teamID = $teamsID[$i];
+	//	echo"Team ID: $teamID <br> ";
+try{
+$apiURL = "https://api.sportradar.com/nfl/official/trial/v7/en/seasons/2023/REG/teams/$teamID/statistics.json?api_key=z58e5mh8q6rk8afnbczdj6xk";
+ $ch = curl_init($apiURL); 
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	 // Execute the API request
+      $apiResponse = curl_exec($ch);
+ 
+      // Check for errors in the API response
+      if ($apiResponse === false) {
+          throw new Exception('cURL error: ' . curl_error($ch));
+      }
+}
+      // Close the cURL session
+      curl_close($ch);
+ 
+ // Assuming the API response is JSON data, you can decode it
+    $apiData = json_decode($apiResponse, true);
+
+
+
+
 $offensePositions = ["QB", "RB", "WR", "TE", "OL"];
 $defensePositions = ["DL", "LB", "CB", "S"];
 
 // Loop through the "players" array for offense players
 foreach ($apiData["players"] as $playerData) {
+
+	// Handles the teamdata processes
+	if(isset($apiData["players"])) {
+		echo "Team Name: " .$apiData["players"] . "<br>";
+	} else {
+		echo "Team data not found in API response. <br>";
+		}
+
   $position = $playerData["position"];
     if (in_array($position, $offensePositions)) {
         if (!$teamNameAdded) {
@@ -78,6 +110,7 @@ foreach ($apiData["players"] as $playerData) {
 		}
         $team[count($team) - 1][3][] = [$playerData["name"], $playerData["position"],"Offense",$jersey];
     }
+  	sleep(2);
 }
 
 // Reset the $teamNameAdded flag
@@ -97,12 +130,15 @@ foreach ($apiData["players"] as $playerData) {
                 }
         $team[count($team) - 1][3][] = [$playerData["name"], $playerData["position"],"Defense",$jersey];
     }
-}
 
+    	sleep(2); 
+}
+}
 //Echos out each team arary
 echo json_encode($team, JSON_PRETTY_PRINT);
 
-}
+
+
 catch (Exception $e)
 {
     echo "Error: " . $e->getMessage();
