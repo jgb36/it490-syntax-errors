@@ -13,25 +13,13 @@ if (!isset($_POST))
 }
 $request = $_POST;
 $response = "unsupported request type, politely FUCK OFF";
-$logger = new rabbitMQClient("testRabbitMQ.ini","logger");
-
 switch ($request["type"])
 {
 	case "login":
 		$response = "login, yeah we can do that";
-		try{
-                        $client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
-                        $response = $client->send_request($request);
-
-
-                }catch(Exception $e){
-                        $log = array();
-                        $log['where']="login: login";
-                        $log['error']="$e " ;
-			$logger->publish($log);
-			break;
-                }
-
+		$client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
+		$response = $client->send_request($request);
+		'<script>console.log(JSON.parse($response)); </script>';
 		if($response['Validated'] === true)
 		{
 			session_start();
@@ -41,74 +29,36 @@ switch ($request["type"])
 		//$response = $client->publish($request);
 		break;
 	case "register":
-
-		$response = "account has been successfully created";
-		try{
-			$client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
-	                $response = $client->send_request($request);
-		}catch(Exception $e){
-			$log = array();
-                	$log['where']="login: register";
-        	        $log['error']="$e " ;
-	                $logger->publish($log);
-			break;
-			
-		}
-                
+                $response = "account has been successfully created";
+                $client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
+                $response = $client->send_request($request);
                 if($response['created'] === true)
 		{
 			session_start();
                         $_SESSION['uname'] = $response['uname'];
-
                         //session_start();
                 }
-		}
-
                 //$response = $client->publish($request);
 		break;
 	case "logout":
-		
+		$client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
 		echo "in logout case";
 		session_start();
 		$request = array();
 		$request['type']="logout";
 		$request['uname']=$_SESSION['uname'];
-		try{
-                        $client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
-                        $response = $client->send_request($request);
-
-
-                }catch(Exception $e){
-                        $log = array();
-                        $log['where']="login: logout";
-                        $log['error']="$e " ;
-			$logger->publish($log);
-			break;
-                }
-
+		$response = $client->send_request($request);
 		session_unset();
 		session_destroy();
 		break;
 	case "validate_session":
-		
+		$client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
 		$request['type'] = "validate_session";
 		session_start();
 		if(isset($_SESSION['uname']))
 		{
 			$request['uname']=$_SESSION['uname'];
-
-			try{
-                        	$client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
-                        	$response = $client->send_request($request);
-
-
-                	}catch(Exception $e){
-                       		$log = array();
-                	        $log['where']="login: Validate_session";
-        	                $log['error']="$e " ;
-				$logger->publish($log);
-				break;
-	           	}
+			$response = $client->send_request($request);
 		}
 		else
 		{
