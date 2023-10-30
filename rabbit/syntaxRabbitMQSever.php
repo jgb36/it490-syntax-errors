@@ -305,6 +305,79 @@ function doValidate($username)
 	}
 
 }
+function createLeague($username, $leagueName){
+       $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+
+       $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+       $stmt = $mydb->prepare("INSERT INTO league(ownerName, leagueName) VALUES ( ?, ?)");
+       $stmt->bind_param("ss", $username, $leagueName);
+       if($stmt->execute()) {
+	       //Registration works
+	       $lastInsertedPK = $mydb->insert_id;
+	       echo "inserted id is: $lastInsertedPK";
+	       $query2 = "INSERT INTO participants (playerName, leagueID) VALUES (?, ?)";
+	       $stmt2 = $mydb->prepare($query2);
+	       $stmt2->bind_param("si", $username, $lastInsertedPK);
+	       if($stmt2->execute()){
+		return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
+	       }
+	       else{
+		$log = array();
+                $log['where']="listener: createLeague";
+                $log['error']="failed to create league for $username:   1 ";
+                $logger->publish($log);
+                return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
+                echo "failed to create league for $username: ". $mydb->error . PHP_EOL;
+	       }
+               
+    
+         }else {
+                $log = array();
+                $log['where']="listener: createLeague";
+                $log['error']="failed to create league for $username:  2 ";
+                $logger->publish($log);
+                return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
+                echo "failed to create league for $username: ". $mydb->error . PHP_EOL;
+        }
+
+
+	
+
+
+}
+
+function leagueList($username){
+	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+
+	$stmt = $mydb->prepare("SELECT l.leagueName, l.draftStart, l.draftDone  from participants as p JOIN league AS l ON p.leagueID = l.id WHERE p.playerName = ? ");
+        $stmt->bind_param("s", $username);
+	//Check the database data
+	$leagues = array();
+        if($stmt->execute()) {
+		$result = $stmt->get_result();
+		if ($result->num_rows > 0) {
+
+    			while ($row = $result->fetch_assoc()) {
+        			$leagues[] = array(
+					"leagueName" => $row["leagueName"],
+					"draftStart" => $row["draftStart"],
+					"draftDone" => $row["draftDone"],
+        			);
+			}
+			return $leagues;
+		}
+	       	else {
+    				echo "No leagues found for player: $username";
+			}
+        }
+        else{
+                $log = array();
+                $log['where']="listener: listLeagues";
+                $log['error']="failed to connect to DB " ;
+                $logger->publish($log);
+                return array('Validated' => false, 'message'=>"No Sesssion Found");
+        }
+}
 
 
 // main function
@@ -339,7 +412,11 @@ function requestProcessor($request)
     case 'register':
 	    return userRegistration($request['uname'], $request['email'], $request['pword']);
     case 'logout':
-	    return sessionDelete($request['uname']); 	    
+	    return sessionDelete($request['uname']);
+    case 'createLeague':
+	    return createLeague($request['uname'],$request['leagueName']);
+    case 'leagueList':
+	    return leagueList($request['uname']);	    
   }
 
   $log = array();
