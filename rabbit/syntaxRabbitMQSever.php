@@ -346,6 +346,40 @@ function createLeague($username, $leagueName){
 
 }
 
+function leagueList($username){
+	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+
+	$stmt = $mydb->prepare("SELECT l.leagueName, l.draftStart, l.draftDone  from participants as p JOIN league AS l ON p.leagueID = l.id WHERE p.playerName = ? ");
+        $stmt->bind_param("s", $username);
+	//Check the database data
+	$leagues = array();
+        if($stmt->execute()) {
+		$result = $stmt->get_result();
+		if ($result->num_rows > 0) {
+
+    			while ($row = $result->fetch_assoc()) {
+        			$leagues[] = array(
+					"leagueName" => $row["leagueName"],
+					"draftStart" => $row["draftStart"],
+					"draftDone" => $row["draftDone"],
+        			);
+			}
+			return $leagues;
+		}
+	       	else {
+    				echo "No leagues found for player: $username";
+			}
+        }
+        else{
+                $log = array();
+                $log['where']="listener: listLeagues";
+                $log['error']="failed to connect to DB " ;
+                $logger->publish($log);
+                return array('Validated' => false, 'message'=>"No Sesssion Found");
+        }
+}
+
+
 // main function
 function requestProcessor($request)
 {
@@ -381,7 +415,8 @@ function requestProcessor($request)
 	    return sessionDelete($request['uname']);
     case 'createLeague':
 	    return createLeague($request['uname'],$request['leagueName']);
-    	    
+    case 'leagueList':
+	    return leagueList($request['uname']);	    
   }
 
   $log = array();
