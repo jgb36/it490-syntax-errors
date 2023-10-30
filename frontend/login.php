@@ -56,10 +56,14 @@ switch ($request["type"])
 		}
                 
                 if($response['created'] === true)
-                {
+		{
+			session_start();
                         $_SESSION['uname'] = $response['uname'];
-                        session_start();
+
+                        //session_start();
+                }
 		}
+
                 //$response = $client->publish($request);
 		break;
 	case "logout":
@@ -105,6 +109,12 @@ switch ($request["type"])
 				$logger->publish($log);
 				break;
 	           	}
+		}
+		else
+		{
+			$request = array();
+			$request['type'] = "validate_session";
+		        $response = $client->send_request($request);	
 		}
                 break;
 }
