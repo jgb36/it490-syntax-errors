@@ -319,7 +319,9 @@ function createLeague($username, $leagueName){
 	       $stmt2 = $mydb->prepare($query2);
 	       $stmt2->bind_param("si", $username, $lastInsertedPK);
 	       if($stmt2->execute()){
-		return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
+		       checkForTeamPlayerData();
+		       return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
+		       
 	       }
 	       else{
 		$log = array();
@@ -329,8 +331,6 @@ function createLeague($username, $leagueName){
                 return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
                 echo "failed to create league for $username: ". $mydb->error . PHP_EOL;
 	       }
-               
-    
          }else {
                 $log = array();
                 $log['where']="listener: createLeague";
@@ -339,17 +339,12 @@ function createLeague($username, $leagueName){
                 return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
                 echo "failed to create league for $username: ". $mydb->error . PHP_EOL;
         }
-
-
-	
-
-
 }
 
 function leagueList($username){
 	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
-	$stmt = $mydb->prepare("SELECT l.leagueName, l.draftStart, l.draftDone  from participants as p JOIN league AS l ON p.leagueID = l.id WHERE p.playerName = ? ");
+	$stmt = $mydb->prepare("SELECT l.id,l.leagueName, l.draftStart, l.draftDone  from participants as p JOIN league AS l ON p.leagueID = l.id WHERE p.playerName = ? ");
         $stmt->bind_param("s", $username);
 	//Check the database data
 	$leagues = array();
@@ -358,7 +353,8 @@ function leagueList($username){
 		if ($result->num_rows > 0) {
 
     			while ($row = $result->fetch_assoc()) {
-        			$leagues[] = array(
+				$leagues[] = array(
+					"id"=>$row["id"],
 					"leagueName" => $row["leagueName"],
 					"draftStart" => $row["draftStart"],
 					"draftDone" => $row["draftDone"],
@@ -378,11 +374,135 @@ function leagueList($username){
                 return array('Validated' => false, 'message'=>"No Sesssion Found");
         }
 }
+//function draftList(){
+//	checkForTeamPlayerData()
 
 
+//}
+
+function checkForTeamPlayerData(){
+	 //DB connection
+        $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+
+        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+
+        if ($mydb->errno != 0)
+        {
+                echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+                $log = array();
+                $log['where']="listener: userRegistration";
+                $log['error']="failed to connect to databse: ". $mydb->error . PHP_EOL;
+                $logger->publish($log);
+
+                exit(0);
+        }
+
+        echo "successfully connected to database(regis)".PHP_EOL;
+
+        //Check for duplicate entry
+        $checkForData = $mydb->prepare("SELECT *  FROM team");
+        $checkForData->execute();
+        $data_DB_Result = $checkForData->get_result();
+	$request=array();
+        $request['type']='getData';
+        $dmz = new rabbitMQClient("syntaxRabbitMQ.ini","dmz");
+        $response = $dmz->send_request($request);
+
+	if($data_DB_Result-> num_rows < 64) {
+	 	foreach($teamData as $teamInfo){
+			$teamName =$teamInfo[0];
+			$teamAlias = $teamInfo[1];
+			$offenseDefense = $teamInfo[2];
+			$teamQuery = "INSERT INTO team(teamName,offenseDefense) values (?,?)";
+			$stmt = $mydb->prepare($teamQuery);
+			$stmt->execute();
+			$teamId = $mydb->insert_id;
+			foreach ($teamInfo[3] as $playerData){
+				$playerName = $playerData[0];
+				$position = $playerData[1];
+				$offenseDefense = $playerData[2];
+				$jersey = $playerData[3];
+				$playerQuery= "INSERT INTO player(playerName,position, offenseDefense,JerseyNum teamId) VALUES (?,?,?,?,?)";
+				$stmt=$mydb->prepare($playerQuery);
+				$stmt->bind_param('sssi',$playerName,$position,$offenseDefense,$jersey,$teamId);
+				$stmt->execute();
+			}
+		}
+	}else if($data_DB_Result-> num_rows == 64){
+		foreach($teamData as $teamInfo){
+                        $teamName =$teamInfo[0];       
+                        foreach ($teamInfo[3] as $playerData){
+                                $playerName = $playerData[0];
+                                $position = $playerData[1];
+                                $offenseDefense = $playerData[2];
+                                $jersey = $playerData[3];
+                                $updatePlayer= "UPDATE player set position = ? WHERE playerName = ? AND JerseryNum = ?";
+                                $stmt=$mydb->prepare($playerQuery);
+                                $stmt->bind_param('ssi',$position,$playerName,$jersey);
+                                $stmt->execute();
+                        }
+                }
+	}
+	$mydb->close();
+	exit(0);
+}
+
+
+function showInvites($userName){
+	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+
+         $stmt = $mydb->prepare("SELECT i.id,l.leagueName,i.ownerName  from invites as i JOIN league AS l ON i.leagueId = l.id WHERE i.playerName = ? ");
+         $stmt->bind_param("s", $username);
+         //Check the database data
+         $leagues = array();
+         if($stmt->execute()) {
+                 $result = $stmt->get_result();
+                 if ($result->num_rows > 0) {
+ 
+                         while ($row = $result->fetch_assoc()) {
+                                 $invites[] = array(
+                                         "id"=>$row["id"],
+                                         "leagueName" => $row["leagueName"],
+                                         "ownerName" => $row["ownerName"],
+                                         
+                                 );
+                         }
+                         return $invites;
+                 }
+                 else {
+                                 echo "No invites found for player: $username";
+                         }
+         }
+         else{
+		 $log = array();
+                 $log['where']="listener: listLeagues";
+                 $log['error']="failed to connect to DB " ;
+                 $logger->publish($log);
+                 return array('Validated' => false, 'message'=>"No Sesssion Found");
+         }
+
+
+
+
+
+}
+function inviteSend($id,$invitedName){
+		$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+		$teamQuery = "INSERT INTO invites(invitedName,leagueId) values (?,?)";
+		$stmt = $mydb->prepare($teamQuery);
+		$stmt->bind_param('si',$invitedName,$id);
+                $stmt->execute();
+
+	
+
+
+
+}
 // main function
 function requestProcessor($request)
 {
+  $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+
   echo "received request".PHP_EOL;
   var_dump($request);
   if(!isset($request['type']))
@@ -416,7 +536,13 @@ function requestProcessor($request)
     case 'createLeague':
 	    return createLeague($request['uname'],$request['leagueName']);
     case 'leagueList':
-	    return leagueList($request['uname']);	    
+	    return leagueList($request['uname']);
+    case 'draft':
+	    return draftList();
+    case 'showInvites':
+	    return showInvites($request['uname']);
+    case 'invite':
+	    return inviteSend($request['id'],$request['uname']);	    
   }
 
   $log = array();
