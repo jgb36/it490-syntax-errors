@@ -22,6 +22,7 @@ $teamsID = [
     "a20471b4-a8d9-40c7-95ad-90cc30e46932", "33405046-04ee-4058-a950-d606f8c30852"
 ];
 
+
 $team = [];
 $teamNameAdded = false;
 
@@ -73,10 +74,8 @@ for ($i = 0; $i < count($teamsID); $i++) {
             }
             //sleep(2);
         }
-
         // Reset the $teamNameAdded flag
         $teamNameAdded = false;
-
         // Loop through the "players" array for defense players
         foreach ($apiData["players"] as $playerData) {
             $position = $playerData["position"];
@@ -109,6 +108,7 @@ function requestProcessor($request)
 
 }
 
+
 $server = new rabbitMQServer("syntaxRabbitMQ.ini", "dmz");
 echo "syntaxRabbitMQServer BEGIN".PHP_EOL;
 $server->process_requests('requestProcessor');
@@ -116,3 +116,7 @@ echo "syntaxRabbitMQServer END".PHP_EOL;
 exit();
 // Echos out the entire team array as JSON
 //echo json_encode($team, JSON_PRETTY_PRINT);
+
+
+?>
+
