@@ -99,38 +99,3 @@ $server->process_requests('requestProcessor');
 echo "syntaxRabbitMQServer END" . PHP_EOL;
 exit();
 ?>
-
-
-
-
-
-    
-    
-    
-}
-return $teamsData;
-}
-
-function requestProcessor($request)
-
-{
-	var_dump($request);
-	switch($request['type'])
-	{
-		case "getData":
-			return getData();
-	}
-
-}
-
-
-$server = new rabbitMQServer("syntaxRabbitMQ.ini", "dmz");
-echo "syntaxRabbitMQServer BEGIN".PHP_EOL;
-$server->process_requests('requestProcessor');
-echo "syntaxRabbitMQServer END".PHP_EOL;
-exit();
-// Echos out the entire team array as JSON
-//echo json_encode($team, JSON_PRETTY_PRINT);
-
-
-?>
