@@ -406,21 +406,22 @@ function checkForTeamPlayerData(){
 	$request=array();
         $request['type']='getData';
 	$dmz = new rabbitMQClient("syntaxRabbitMQ.ini","dmz");
-	echo "after getting dmz response".PHP_EOL;
+	echo "before getting dmz response".PHP_EOL;
 
         $response = $dmz->send_request($request);
 	echo "after getting dmz response".PHP_EOL;
 	
 	if($data_DB_Result-> num_rows < 64) {
 	 	foreach($response as $teamInfo){
-			$teamName =$teamInfo[0];
-			$teamAlias = $teamInfo[1];
-			$offenseDefense = $teamInfo[2];
+			$teamName =$teamInfo['name'];
+			$teamAlias = $teamInfo['alias'];
+			$offenseDefense = $teamInfo['offenseDefense'];
 			$teamQuery = "INSERT INTO team(teamName,offenseDefense) values (?,?)";
 			$stmt = $mydb->prepare($teamQuery);
+			$stmt->bind_param('ss',$teamName,$offenseDefense);
 			$stmt->execute();
 			$teamId = $mydb->insert_id;
-			foreach ($teamInfo[3] as $playerData){
+			foreach ($teamInfo['data'] as $playerData){
 				$playerName = $playerData[0];
 				$position = $playerData[1];
 				$offenseDefense = $playerData[2];
@@ -433,13 +434,14 @@ function checkForTeamPlayerData(){
 		}
 	}else if($data_DB_Result-> num_rows == 64){
 		foreach($response as $teamInfo){
-                        $teamName =$teamInfo[0];       
-                        foreach ($teamInfo[3] as $playerData){
+                        $teamName =$teamInfo['name'];       
+                        foreach ($teamInfo['name'] as $playerData){
+
                                 $playerName = $playerData[0];
                                 $position = $playerData[1];
                                 $offenseDefense = $playerData[2];
                                 $jersey = $playerData[3];
-                                $updatePlayer= "UPDATE player set position = ? WHERE playerName = ? AND JerseryNum = ?";
+                                $updatePlayer= "UPDATE player set position = ? WHERE playerName = ? AND JerseyNum = ?";
                                 $stmt=$mydb->prepare($playerQuery);
                                 $stmt->bind_param('ssi',$position,$playerName,$jersey);
                                 $stmt->execute();
