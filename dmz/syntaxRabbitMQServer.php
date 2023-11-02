@@ -96,6 +96,7 @@ for ($i = 0; $i < count($teamsID); $i++) {
         echo "Error: " . $e->getMessage();
     }
 }
+return $team;
 }
 
 function requestProcessor($request)
@@ -119,4 +120,3 @@ exit();
 
 
 ?>
-

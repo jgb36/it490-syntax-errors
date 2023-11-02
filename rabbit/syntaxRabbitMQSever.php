@@ -405,11 +405,14 @@ function checkForTeamPlayerData(){
         $data_DB_Result = $checkForData->get_result();
 	$request=array();
         $request['type']='getData';
-        $dmz = new rabbitMQClient("syntaxRabbitMQ.ini","dmz");
-        $response = $dmz->send_request($request);
+	$dmz = new rabbitMQClient("syntaxRabbitMQ.ini","dmz");
+	echo "after getting dmz response".PHP_EOL;
 
+        $response = $dmz->send_request($request);
+	echo "after getting dmz response".PHP_EOL;
+	
 	if($data_DB_Result-> num_rows < 64) {
-	 	foreach($teamData as $teamInfo){
+	 	foreach($response as $teamInfo){
 			$teamName =$teamInfo[0];
 			$teamAlias = $teamInfo[1];
 			$offenseDefense = $teamInfo[2];
@@ -429,7 +432,7 @@ function checkForTeamPlayerData(){
 			}
 		}
 	}else if($data_DB_Result-> num_rows == 64){
-		foreach($teamData as $teamInfo){
+		foreach($response as $teamInfo){
                         $teamName =$teamInfo[0];       
                         foreach ($teamInfo[3] as $playerData){
                                 $playerName = $playerData[0];
