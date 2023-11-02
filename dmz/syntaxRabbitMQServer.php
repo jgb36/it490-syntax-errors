@@ -23,84 +23,98 @@ $teamsID = [
 ];
 
 
-$team = [];
-$teamNameAdded = false;
-
+$teamsData = [];
 for ($i = 0; $i < count($teamsID); $i++) {
 	sleep(2);
     $teamID = $teamsID[$i];
-    try {
+    
         $apiURL = "https://api.sportradar.com/nfl/official/trial/v7/en/seasons/2023/REG/teams/$teamID/statistics.json?api_key=$apiKey";
         $ch = curl_init($apiURL);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-        // Execute the API request
+        
         $apiResponse = curl_exec($ch);
 
-        // Check for errors in the API response
+        
         if ($apiResponse === false) {
             throw new Exception('cURL error: ' . curl_error($ch));
         }
 
-        // Close the cURL session
+        
         curl_close($ch);
 
-        // Assuming the API response is JSON data, you can decode it
+       
         $apiData = json_decode($apiResponse, true);
 
         $offensePositions = ["QB", "RB", "WR", "TE", "OL"];
         $defensePositions = ["DL", "LB", "CB", "S"];
 
-        // Loop through the "players" array for offense players
-        foreach ($apiData["players"] as $playerData) {
-            // Handles the team data processes
-            //if (isset($apiData["players"])) {
-               // echo "Team Name: " . $apiData["name"] . "<br>";
-           // } else {
-             //   echo "Team data not found in API response. <br>";
-           // }
+        $teamOffense = [];
+        $teamDefense = [];
 
-            $position = $playerData["position"];
-            if (in_array($position, $offensePositions)) {
-                if (!$teamNameAdded) {
-                    $team[] = [$apiData["name"], $apiData["alias"], "Offense", []];
-                    $teamNameAdded = true;
-                }
-                $jersey = '-';
-                if (isset($playerData["jersey"])) {
-                    $jersey = $playerData["jersey"];
-                }
-                $team[count($team) - 1][3][] = [$playerData["name"], $playerData["position"], "Offense", $jersey];
-            }
-            //sleep(2);
-        }
-        // Reset the $teamNameAdded flag
-        $teamNameAdded = false;
-        // Loop through the "players" array for defense players
         foreach ($apiData["players"] as $playerData) {
             $position = $playerData["position"];
-            if (in_array($position, $defensePositions)) {
-                if (!$teamNameAdded) {
-                    $team[] = [$apiData["name"], $apiData["alias"], "Defense", []];
-                    $teamNameAdded = true;
-                }
-                $jersey = '-';
-                if (isset($playerData["jersey"])) {
-                    $jersey = $playerData["jersey"];
-                }
-                $team[count($team) - 1][3][] = [$playerData["name"], $playerData["position"], "Defense", $jersey];
+            $jersey = isset($playerData["jersey"]) ? $playerData["jersey"] : '-';
+
+            if (in_array($position, $offensePositions)) {
+                $teamOffense[] = [$playerData["name"], $playerData["position"], "Offense", $jersey];
+            } elseif (in_array($position, $defensePositions)) {
+                $teamDefense[] = [$playerData["name"], $playerData["position"], "Defense", $jersey];
             }
-            //sleep(2);
         }
-    } catch (Exception $e) {
-        echo "Error: " . $e->getMessage();
+
+        if (!empty($teamOffense)) {
+            $teamsData[] = [
+                "name" => $apiData["name"],
+		"alias" => $apiData["alias"],
+		"offenseDefense"=>"Offense",
+                "data" => $teamOffense,
+            ];
+        }
+
+        if (!empty($teamDefense)) {
+            $teamsData[] = [
+                "name" => $apiData["name"],
+		"alias" => $apiData["alias"],
+		"offenseDefense"=>"Defense",
+                "data" => $teamDefense,
+            ];
+        }
     }
-}
-return $team;
+
+    return $teamsData;
 }
 
 function requestProcessor($request)
 {
+    switch ($request['type']) {
+        case "getData":
+            return getData();
+    }
+}
+
+$server = new rabbitMQServer("syntaxRabbitMQ.ini", "dmz");
+echo "syntaxRabbitMQServer BEGIN" . PHP_EOL;
+$server->process_requests('requestProcessor');
+echo "syntaxRabbitMQServer END" . PHP_EOL;
+exit();
+?>
+
+
+
+
+
+    
+    
+    
+}
+return $teamsData;
+}
+
+function requestProcessor($request)
+
+{
+	var_dump($request);
 	switch($request['type'])
 	{
 		case "getData":
