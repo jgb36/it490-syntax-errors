@@ -6,9 +6,9 @@ require_once('rabbitMQLib.inc');
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-		$client = new rabbitMQClient("syntaxRabbitMQ.ini","dmz");
+		$client = new rabbitMQClient("syntaxRabbitMQ.ini","syntaxServer");
 		
-$request['type']='getData';
+$request['type']='getOrUpdate';
 echo "before sent";
 		$response = $client->send_request($request);
              echo var_dump($response);
