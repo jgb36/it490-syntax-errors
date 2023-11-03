@@ -81,8 +81,8 @@ for ($i = 0; $i < count($teamsID); $i++) {
             ];
         }
     }
-
-    return $teamsData;
+	echo $teamsData;
+    return json_encode($teamsData);
 }
 
 function requestProcessor($request)
