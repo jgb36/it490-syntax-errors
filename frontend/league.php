@@ -31,6 +31,16 @@ switch ($request["type"])
 		$request['uname']=$_SESSION['uname'];
                 $response = $client->send_request($request);
 		break;
+	case "isOwner":
+		$client = new rabbitMQClient("testRabbitMQ.ini", "syntaxServer");
+                session_start();
+                $request['uname']=$_SESSION['uname'];
+		$response = $client->send_request($request);
+	case 'setLeagueDraftDone':
+		$client = new rabbitMQClient("testRabbitMQ.ini", "syntaxServer");
+                $response = $client->send_request($request);
+
+
 }
 echo json_encode($response);
 exit(0);

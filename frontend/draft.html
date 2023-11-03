@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Syntax Football Draft</title>
+</head>
+
+<body>
+    <h1>Fantasy Football Draft</h1>
+    <button id="setDraftDoneButton" style="display: none" >Set Draft Done</button>
+    <script>
+	var url = new URL(urlString);
+	var leagueId = url.searchParams.get("leagueId");
+	var isOwner = new XMLHttpRequest();
+        isOwner.open("POST","league.php",true);
+        isOwner.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        isOWner.onreadystatechange= function ()
+        {
+                if ((this.readyState == 4)&&(this.status == 200))
+                {
+                        const o = JSON.parse(this.responseText);
+                        if(o.Owner == true)
+				    {
+					    document.getElementById('myButton').style.display = 'block';
+				    }else{
+						document.getElementById('myButton').style.display = 'none';
+						}	
+                }
+        }
+        session.send("type=isOwner&leagueId="+leagueId");
+	document.getElementById("setDraftDoneButton").addEventListener("click", function() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "draft_status.php", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); 
+            xhr.onreadystatechange= function ()
+        {
+
+                if (this.status == 200 && this.readyState==4) {
+                    
+                    const o = JSON.parse(this.responseText);
+		    if(o.done === true){
+			
+		    }else{
+			alert("Draft is not done");
+		    }
+				  
+
+                }
+            };
+
+            
+            xhr.send("type=setLeagueDraftDone&leagueId="leagueId);
+        });
+    </script>
+    <form id="draftForm" method="post" action="draft_process.php">
+        <?php if (!$drafted_teams): ?>
+        <h2>Select Offense Team</h2>
+        <select name="offense_team_id">
+            <option value="">Select an offense team</option>
+        </select>
+
+        <h2>Select Defense Team</h2>
+        <select name="defense_team_id">
+            <option value="">Select a defense team</option>
+        </select>
+
+        <input type="submit" value="Draft Teams" id="draftButton">
+        <?php endif; ?>
+    </form>
+	
+
+
+
+    </body>
+</html>

@@ -408,27 +408,28 @@ function checkForTeamPlayerData(){
 	$dmz = new rabbitMQClient("syntaxRabbitMQ.ini","dmz");
 	echo "before getting dmz response".PHP_EOL;
 
-        $response = $dmz->send_request($request);
+        $allTheData = $dmz->send_request($request);
 	echo "after getting dmz response".PHP_EOL;
-	
+	$response = json_decode($allTheData);
+	var_dump($response);
 	if($data_DB_Result-> num_rows < 64) {
 	 	foreach($response as $teamInfo){
-			$teamName =$teamInfo['name'];
-			$teamAlias = $teamInfo['alias'];
-			$offenseDefense = $teamInfo['offenseDefense'];
+			$teamName =$teamInfo->name;
+			$teamAlias = $teamInfo->alias;
+			$offenseDefense = $teamInfo->offenseDefense;
 			$teamQuery = "INSERT INTO team(teamName,offenseDefense) values (?,?)";
 			$stmt = $mydb->prepare($teamQuery);
 			$stmt->bind_param('ss',$teamName,$offenseDefense);
 			$stmt->execute();
 			$teamId = $mydb->insert_id;
-			foreach ($teamInfo['data'] as $playerData){
+			foreach ($teamInfo->data as $playerData){
 				$playerName = $playerData[0];
 				$position = $playerData[1];
 				$offenseDefense = $playerData[2];
 				$jersey = $playerData[3];
-				$playerQuery= "INSERT INTO player(playerName,position, offenseDefense,JerseyNum teamId) VALUES (?,?,?,?,?)";
+				$playerQuery= "INSERT INTO player(playerName,position, offenseDefense,JerseyNum, teamId) VALUES (?,?,?,?,?)";
 				$stmt=$mydb->prepare($playerQuery);
-				$stmt->bind_param('sssi',$playerName,$position,$offenseDefense,$jersey,$teamId);
+				$stmt->bind_param('sssii',$playerName,$position,$offenseDefense,$jersey,$teamId);
 				$stmt->execute();
 			}
 		}
@@ -503,6 +504,56 @@ function inviteSend($id,$invitedName){
 
 
 }
+function leagueDraftDone($leagueId){
+	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+	$query = "SELECT COUNT(DISTINCT id) as participants_count
+          FROM participants
+	  WHERE leagueID = $league_id";
+	$result = $mydb->query($query);
+	$row = $result->fetch_assoc();
+	$participants_count = $row['participants_count'];
+	$query = "SELECT COUNT(*) as drafts_count
+              FROM user_drafts ud
+              WHERE ud.league_id = $league_id";	
+	$draftedCount = $mydb->query($query);
+	$row = $result->fetch_assoc();
+	$drafts_count = $row['participants_count'];
+	$expected_drafts = $participants_count * 2;
+	if ($drafts_count === $expected_drafts) {
+		$query = "UPDATE league SET draftDone = 1 WHERE id = $league_id";
+		if ($mydb->query($query) === true) {
+			$return = array();
+			$return['done']=true;
+		} else {
+    			echo "Error updating draftDone: " . $mydb->error;
+		}
+		$return = array();
+                $return['done']=false;
+
+
+	}
+}
+
+function isOwner($username,$leagueId){
+	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+	$query = "SELECT ownerName FROM league WHERE id = $league_id and ownerName = $username";
+        $stmt = $mydb->prepare($teamQuery);
+	$stmt->execute();
+
+	if ($stmt->rowCount() > 0) {
+    		$result=array();
+		$result['Owner']=true;
+    		return $result;
+	} else {
+    	
+    		$result=array();
+                $result['Owner']=false;
+                return $result;
+	}
+
+
+
+}
 // main function
 function requestProcessor($request)
 {
@@ -547,7 +598,11 @@ function requestProcessor($request)
     case 'showInvites':
 	    return showInvites($request['uname']);
     case 'invite':
-	    return inviteSend($request['id'],$request['uname']);	    
+	    return inviteSend($request['id'],$request['uname']);	   
+    case 'isOwner':
+	    return isOwner($request['uname'],$request['leagueId']);
+    case 'setLeagueDraftDone':
+	    return leagueDraftDone($request['leagueId']);
   }
 
   $log = array();
