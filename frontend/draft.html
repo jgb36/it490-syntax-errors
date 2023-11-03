@@ -7,29 +7,30 @@
 <body>
     <h1>Fantasy Football Draft</h1>
     <button id="setDraftDoneButton" style="display: none" >Set Draft Done</button>
+    <p id="draftIsDone" style="display: none">Your Draft Is Done!</p>
     <script>
 	var url = new URL(urlString);
 	var leagueId = url.searchParams.get("leagueId");
 	var isOwner = new XMLHttpRequest();
         isOwner.open("POST","league.php",true);
         isOwner.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-        isOWner.onreadystatechange= function ()
+        isOwner.onreadystatechange= function ()
         {
                 if ((this.readyState == 4)&&(this.status == 200))
                 {
                         const o = JSON.parse(this.responseText);
                         if(o.Owner == true)
-				    {
-					    document.getElementById('myButton').style.display = 'block';
-				    }else{
-						document.getElementById('myButton').style.display = 'none';
-						}	
+			{
+				document.getElementById('setDraftDoneButton').style.display = 'block';
+			}else{
+				document.getElementById('setDraftDoneButton').style.display = 'none';
+	 		}	
                 }
         }
-        session.send("type=isOwner&leagueId="+leagueId");
+        session.send("type=isOwner&leagueId="+leagueId);
 	document.getElementById("setDraftDoneButton").addEventListener("click", function() {
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", "draft_status.php", true);
+            xhr.open("POST", "league.php", true);
             xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); 
             xhr.onreadystatechange= function ()
         {
@@ -50,6 +51,93 @@
             
             xhr.send("type=setLeagueDraftDone&leagueId="leagueId);
         });
+	    var drafted_teams = false;
+	    var userDraftDone = new XMLHttpRequest();
+            userDraftDone.open("POST", "league.php", true);
+            userDraftDone.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); 
+            userDraftDone.onreadystatechange= function ()
+            {
+
+                if (this.status == 200 && this.readyState==4) {
+                    
+                    const o = JSON.parse(this.responseText);
+                    if(o.done === true){
+                        drafted_teams=true
+			document.getElementById('draftIsDone').style.display = 'block';
+			document.getElementById('draftButton').disabled=true;
+			var offenseSelect = document.querySelector("select[name=offense_team_id]");
+			var defenseSelect = document.querySelector("select[name=defense_team_id]");
+			offenseSelect.disabled=true;
+			defenseSelect.disabled=true;
+		    }
+		    else{
+			populateOptions();
+		    }
+
+
+                    
+                }
+            };
+            userDraftDone.send("type=checkUserDraft&leagueId="leagueId);
+		
+	    function populateOptions(){
+		    var drafted_teams = false;
+            	    var userDraftDone = new XMLHttpRequest();
+           	    getTeamData.open("POST", "league.php", true);
+           	    getTeamData.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); 
+        	    getTeamData.onreadystatechange= function ()
+	            {  
+
+                    	if (this.status == 200 && this.readyState==4) {
+                    
+                    		var teamData = JSON.parse(this.responseText);
+                    		var offenseSelect = document.querySelector("select[name=offense_team_id]");
+                        	var defenseSelect = document.querySelector("select[name=defense_team_id]");
+				for(var i = 0; i<teamData.length;i++){
+					var option = document.createElement('option');
+					option.value = teamData[i].id;
+					option.text = teamData[i].teamName+' ' + teamData[i].offenseDefense;
+					
+					if(teamData[i].offenseDefense == "Offense"){
+						offenseSelect.appendChild(option);
+					}
+					else if(teamData[i].offenseDefense == "Defense"){
+						offenseSelect.appendChild(option);
+
+					}
+				}
+                	}
+
+            	     };
+            	    getTeamData.send("type=getTeamData&leagueId="leagueId);
+                }
+	    document.getElementById("draftButton").addEventListener("submit",function(e){
+		e.preventDefault();
+		var offenseSelect = document.querySelector("select[name=offense_team_id]");
+                var defenseSelect = document.querySelector("select[name=defense_team_id]");
+
+		var selectedOffenseTeam = offenseSelect.value;
+		var selectedDefenseTeam - defenseSelect.value;
+		if( selectedoffenseTeam && selectedDefenseTeam){
+		var draft = new XMLHttpRequest();
+        	draft.open("POST","league.php",true);
+        	draft.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        	draft.onreadystatechange= function ()
+        	{
+                if ((this.readyState == 4)&&(this.status == 200))
+                   {
+                        const done = JSON.parse(this.responseText);
+                        if(o.done == true)
+                        {
+                                document.getElementById('setDraftDoneButton').style.display = 'block';
+                        }else{
+                                document.getElementById('setDraftDoneButton').style.display = 'none';
+                        }       
+                   }
+        	}
+        	draft.send("type=draft&offenseId="+selectedOffenseTeam"&defenseId="+selectedDefenseTeam"&leagueId="+leagueId);   
+			    }
+			}
     </script>
     <form id="draftForm" method="post" action="draft_process.php">
         <?php if (!$drafted_teams): ?>

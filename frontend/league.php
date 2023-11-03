@@ -36,10 +36,27 @@ switch ($request["type"])
                 session_start();
                 $request['uname']=$_SESSION['uname'];
 		$response = $client->send_request($request);
+		break;
 	case 'setLeagueDraftDone':
 		$client = new rabbitMQClient("testRabbitMQ.ini", "syntaxServer");
+		$response = $client->send_request($request);
+		break;
+	case 'checkUserDraft':
+		session_start();
+		$requst['uname']=$_SESSION['uname'];
+		$client = new rabbitMQClient("testRabbitMQ.ini", "syntaxServer");
+		$response = $client->send_request($request);
+		break;
+	case 'getTeamData':
+		$client = new rabbitMQClient("testRabbitMQ.ini", "syntaxServer");
                 $response = $client->send_request($request);
-
+		break;
+	case 'draft':
+		session_start();
+                $requst['uname']=$_SESSION['uname'];
+		$client = new rabbitMQClient("testRabbitMQ.ini", "syntaxServer");
+                $response = $client->send_request($request);
+                break;
 
 }
 echo json_encode($response);

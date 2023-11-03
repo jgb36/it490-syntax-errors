@@ -537,7 +537,7 @@ function leagueDraftDone($leagueId){
 function isOwner($username,$leagueId){
 	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 	$query = "SELECT ownerName FROM league WHERE id = $league_id and ownerName = $username";
-        $stmt = $mydb->prepare($teamQuery);
+        $stmt = $mydb->prepare($query);
 	$stmt->execute();
 
 	if ($stmt->rowCount() > 0) {
@@ -553,6 +553,86 @@ function isOwner($username,$leagueId){
 
 
 
+}
+function checkUserDraft($username,$leagueId){
+	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+	$query = "SELECT ownerName FROM user_drafts WHERE leagueId = $league_id and ownerName = $username";
+	$stmt = $mydb->prepare($query);
+	$stmt->execute();
+	if($stmt->rowCount()>0){
+		$result=array();
+                $result['done']=true;
+                return $result;
+	}else{
+		$result=array();
+                $result['done']=true;
+                return $result;
+
+	}
+
+
+}
+
+
+function getTeamData($leagueId){
+        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+	$query = "SELECT id, teamName, offenseDefense
+	FROM team
+	WHERE id NOT IN (
+    		SELECT DISTINCT offense_team_id FROM user_drafts
+		WHERE offense_team_id IS NOT NULL
+		AND leagueId = $leagueId
+	)
+	AND offenseDefense = 'offense'
+	UNION
+	SELECT id, teamName, offenseDefense
+	FROM team
+	WHERE id NOT IN (
+    		SELECT DISTINCT defense_team_id FROM user_drafts
+		WHERE defense_team_id IS NOT NULL
+		AND leagueId = $leagueId
+	)
+	AND offenseDefense = 'defense';";
+	$stmt = $mydb->prepare($query);
+        $stmt->execute();
+	$result = $stmt->get_results();
+	$results = [];
+	while ($row = $result->fetch_assoc()){
+		$resultRow=[
+			"id"=>$row["id"],
+			"teamName"=>$row["teamName"],
+			"offenseDefense"=>$row["offenseDefense"],
+		];
+		$results[]=$resultRow;
+	}
+	return $results;
+}
+function draft($username,$offenseId,$defenseId,$leagueId){
+	$logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+
+	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+	$query = "INSERT into user_drafts(userName, offense_team_id, defense_team_id, leagueId) VALUES ($username,$offenseId,$defenseId,$leagueId)";
+	if( $conn->connect_error){
+		echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+                $log = array();
+                $log['where']="listener: userRegistration";
+                $log['error']="failed to connect to databse: ". $mydb->error . PHP_EOL;
+                $logger->publish($log);
+
+                exit(0);
+		
+		
+	}
+	$stmt = $mydb->prepare($query);
+	if($stmt->execute()){
+		$result=array();
+                $result['done']=true;
+                return $result;		
+	}else{
+		$result=array();
+		$result['done']=true;
+                return $result;
+	}
 }
 // main function
 function requestProcessor($request)
@@ -593,8 +673,8 @@ function requestProcessor($request)
 	    return createLeague($request['uname'],$request['leagueName']);
     case 'leagueList':
 	    return leagueList($request['uname']);
-    case 'draft':
-	    return draftList();
+    case 'getOrUpdate':
+	    return checkForTeamPlayerData();
     case 'showInvites':
 	    return showInvites($request['uname']);
     case 'invite':
@@ -603,6 +683,12 @@ function requestProcessor($request)
 	    return isOwner($request['uname'],$request['leagueId']);
     case 'setLeagueDraftDone':
 	    return leagueDraftDone($request['leagueId']);
+    case 'checkUserDraft':
+	    return checkUserDraft($request['uname'],$request['leagueId']);
+    case 'getTeamData':
+	    return getTeamData($request['leagueId']);
+   case 'draft':
+	   return draft($request['uaname'],$request['offenseId'],$request['defenseId'],$leagueId['leagueId']);
   }
 
   $log = array();
