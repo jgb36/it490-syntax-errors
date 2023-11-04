@@ -1,5 +1,39 @@
 <!DOCTYPE html>
 <html>
+	<script>
+
+function HandleInviteResponse(response)
+ {
+         var text = JSON.stringify(response);
+         const obj = JSON.parse(response);
+ //      document.getElementById("textResponse").innerHTML = response+"<p>";     
+         document.getElementById("textResponse").innerHTML = "response: "+text+"<p>";
+ }
+ 
+ 
+ function sendInvite()
+         {
+                 event.preventDefault();
+                 var urlParams = new URLSearchParams(window.location.search);
+                 var invite = new XMLHttpRequest();
+                 var userName = document.getElementById("userName").value;
+                 var id = urlParams.get('leagueId');
+                 var leagueName = urlParams.get('leagueName');
+                 invite.open("POST","league.php",true);
+                 invite.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+                 alert(userName);
+                 invite.onreadystatechange = function ()
+                 {
+                         if ((this.readyState == 4)&&(this.status == 200))
+                         {
+                                 HandleInviteResponse(this.responseText);
+                         }
+                 }
+                 invite.send("type=invite&uname="+userName+"&leagueName="+leagueName+"&leagueId=" +id);
+         }
+
+
+	</script>
 <head>
     <title>Syntax Football Draft</title>
 </head>
@@ -9,6 +43,7 @@
     <button id="setDraftDoneButton" style="display: none" >Set Draft Done</button>
     <p id="draftIsDone" style="display: none">Your Draft Is Done!</p>
     <script>
+	var urlString = window.location.href;
 	var url = new URL(urlString);
 	var leagueId = url.searchParams.get("leagueId");
 	var isOwner = new XMLHttpRequest();
@@ -19,7 +54,7 @@
                 if ((this.readyState == 4)&&(this.status == 200))
                 {
                         const o = JSON.parse(this.responseText);
-                        if(o.Owner == true)
+                        if(o.Owner === true)
 			{
 				document.getElementById('setDraftDoneButton').style.display = 'block';
 			}else{
@@ -27,7 +62,7 @@
 	 		}	
                 }
         }
-        session.send("type=isOwner&leagueId="+leagueId);
+        isOwner.send("type=isOwner&leagueId="+leagueId);
 	document.getElementById("setDraftDoneButton").addEventListener("click", function() {
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "league.php", true);
@@ -39,7 +74,7 @@
                     
                     const o = JSON.parse(this.responseText);
 		    if(o.done === true){
-			
+			alert("Draft is done");	
 		    }else{
 			alert("Draft is not done");
 		    }
@@ -49,7 +84,7 @@
             };
 
             
-            xhr.send("type=setLeagueDraftDone&leagueId="leagueId);
+            xhr.send("type=setLeagueDraftDone&leagueId=" +leagueId);
         });
 	    var drafted_teams = false;
 	    var userDraftDone = new XMLHttpRequest();
@@ -78,11 +113,11 @@
                     
                 }
             };
-            userDraftDone.send("type=checkUserDraft&leagueId="leagueId);
+            userDraftDone.send("type=checkUserDraft&leagueId=" +leagueId);
 		
 	    function populateOptions(){
 		    var drafted_teams = false;
-            	    var userDraftDone = new XMLHttpRequest();
+            	    var getTeamData = new XMLHttpRequest();
            	    getTeamData.open("POST", "league.php", true);
            	    getTeamData.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"); 
         	    getTeamData.onreadystatechange= function ()
@@ -102,23 +137,45 @@
 						offenseSelect.appendChild(option);
 					}
 					else if(teamData[i].offenseDefense == "Defense"){
-						offenseSelect.appendChild(option);
+						defenseSelect.appendChild(option);
 
 					}
 				}
                 	}
 
             	     };
-            	    getTeamData.send("type=getTeamData&leagueId="leagueId);
+            	    getTeamData.send("type=getTeamData&leagueId=" +leagueId);
                 }
-	    document.getElementById("draftButton").addEventListener("submit",function(e){
+    </script>
+	<form  method="post">
+         <label for="userName">Enter username of the person you want to invite: </label>
+         <input id = "userName" type="text" name="userName" required>
+         <input type="submit" value="invite" onclick = sendInvite()>
+ 	</form>
+
+	<form id="draftForm" method="post">
+         <h2>Select Offense Team</h2>
+         <select name="offense_team_id">
+             <option value="">Select an offense team</option>
+         </select>
+ 
+         <h2>Select Defense Team</h2>
+         <select name="defense_team_id">
+             <option value="">Select a defense team</option>
+         </select>
+ 
+         <input type="submit" value="Draft Teams" id="draftButton">
+     </form>
+<script>
+	document.addEventListener("DOMContentLoaded", function(){
+	    document.getElementById("draftButton").addEventListener("click",function(e){
 		e.preventDefault();
 		var offenseSelect = document.querySelector("select[name=offense_team_id]");
                 var defenseSelect = document.querySelector("select[name=defense_team_id]");
 
 		var selectedOffenseTeam = offenseSelect.value;
-		var selectedDefenseTeam - defenseSelect.value;
-		if( selectedoffenseTeam && selectedDefenseTeam){
+		var selectedDefenseTeam = defenseSelect.value;
+		if( selectedOffenseTeam && selectedDefenseTeam){
 		var draft = new XMLHttpRequest();
         	draft.open("POST","league.php",true);
         	draft.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
@@ -127,7 +184,7 @@
                 if ((this.readyState == 4)&&(this.status == 200))
                    {
                         const done = JSON.parse(this.responseText);
-                        if(o.done == true)
+                        if(done.done == true)
                         {
                                 document.getElementById('setDraftDoneButton').style.display = 'block';
                         }else{
@@ -135,28 +192,10 @@
                         }       
                    }
         	}
-        	draft.send("type=draft&offenseId="+selectedOffenseTeam"&defenseId="+selectedDefenseTeam"&leagueId="+leagueId);   
+        	draft.send("type=draft&offenseId="+selectedOffenseTeam+"&defenseId="+selectedDefenseTeam+"&leagueId="+leagueId);   
 			    }
-			}
-    </script>
-    <form id="draftForm" method="post" action="draft_process.php">
-        <?php if (!$drafted_teams): ?>
-        <h2>Select Offense Team</h2>
-        <select name="offense_team_id">
-            <option value="">Select an offense team</option>
-        </select>
-
-        <h2>Select Defense Team</h2>
-        <select name="defense_team_id">
-            <option value="">Select a defense team</option>
-        </select>
-
-        <input type="submit" value="Draft Teams" id="draftButton">
-        <?php endif; ?>
-    </form>
-	
-
-
-
+			});
+		});
+</script>
     </body>
 </html>

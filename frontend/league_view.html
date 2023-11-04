@@ -22,6 +22,36 @@ function HandleValidation()
         }
         session.send("type=validate_session");
 }
+
+function HandleInviteResponse(response)
+{
+        var text = JSON.stringify(response);
+        const obj = JSON.parse(response);
+//      document.getElementById("textResponse").innerHTML = response+"<p>";     
+        document.getElementById("textResponse").innerHTML = "response: "+text+"<p>";
+}
+
+
+function sendInvite()
+	{
+		event.preventDefault();
+		var urlParams = new URLSearchParams(window.location.search);
+		var invite = new XMLHttpRequest();
+		var userName = document.getElementById("userName").value;
+		var id = urlParams.get('leagueId');
+		var leagueName = urlParams.get('leagueName');
+		invite.open("POST","league.php",true);
+	        invite.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+		alert(userName);
+        	invite.onreadystatechange = function ()
+        	{
+                	if ((this.readyState == 4)&&(this.status == 200))
+                	{
+				HandleInviteResponse(this.responseText);
+			}
+		}
+		invite.send("type=invite&uname="+userName+"&leagueName="+leagueName+"&leagueId=" +id);
+	}
 </script>
 
 <h1>League View</h1>
@@ -30,10 +60,8 @@ function HandleValidation()
 awaiting response
 </div>
 <div>
-<p>View your Leagues Below</p>
+	<p>View your league below</p>
 </div>
-<script>
-//SendLoginRequest("kehoed","12345");
-</script>
+
 </html>
 

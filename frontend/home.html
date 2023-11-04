@@ -18,6 +18,7 @@ function HandleValidation()
                                 SendLogoutRequest();
                         }
 		leagueLoader()
+		inviteLoader()
                 }
         }
         session.send("type=validate_session");
@@ -49,6 +50,7 @@ function SendLogoutRequest()
 <p>You have successfully logged in</p>
 </div>
 <p>Click here to <a href = "league_creation.html"> Create a League </a>
+<!--<p>Click here for <a href = "/phpbb/phpBB3/"> Forums </a>-->
 <script>
 //SendLoginRequest("kehoed","12345");
 </script>
@@ -79,14 +81,20 @@ function SendLogoutRequest()
 
                         // Display league data
                         listItem.textContent = 'Name: ' + league.leagueName +
-                            ', Draft Start: ' + (league.draftStart ? 'Yes' : 'No') +
                             ', Draft Done: ' + (league.draftDone ? 'Yes' : 'No');
 
                         // Add an onclick event to redirect to another page when the league is clicked
                         listItem.onclick = function () {
-                            window.location.href = 'league.php?leagueName=' + league.leagueName;
-                        }
 
+				if(league.draftDone == true)
+					    {
+                            window.location.href = 'league_view.html?leagueName=' + league.leagueName + '&leagueId=' + league.id;
+							}
+				else
+				    {
+					window.location.href = 'draft.html?leagueName=' + league.leagueName + '&leagueId=' + league.id;
+					}
+				    }
                         listContainer.appendChild(listItem);
                     });
                 }
@@ -95,12 +103,62 @@ function SendLogoutRequest()
             xhr.send("type=leagueList");
        
 }
+
+	    function inviteLoader() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'league.php', true);
+            xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    var t = JSON.stringify(this.responseText);
+                    document.getElementById("textResponse").innerHTML = "response: "+t+"<p>";
+                    var invites = JSON.parse(xhr.responseText);
+
+                    if (invites.error) {
+                        console.error(invites.error);
+                        return;
+                    }
+
+                    var listContainer = document.getElementById('showInvites');
+
+                    invites.forEach(function (invite) {
+                        var listItem = document.createElement('li');
+
+                        // Display invite data
+                        listItem.textContent = 'Name: ' + invite.leagueName +
+                            ', League ID: ' + invite.leagueId;
+
+                        // Add an onclick event to redirect to another page when the league is clicked
+                        listItem.onclick = function () {
+				var a = new XMLHttpRequest();
+				a.open('POST', 'league.php', true);
+				a.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+				a.onreadystatechange = function() {
+						    if(a.readyState == 4 && a.status == 200) {
+			window.location.href = 'draft.html?leagueName=' + invite.leagueName + '&leagueId=' + invite.leagueId;
+				    } 
+			}
+			a.send("type=handleInvite&leagueId=" + invite.leagueId);
+       			}
+			listContainer.appendChild(listItem);
+                });
+                }
+            //xhr.open('GET', 'league.php', true);
+            //xhr.send("type=showInvites");
+	}
+	xhr.send("type=showInvites");
+}
     </script>
 <div id="textResponse">
      <h1>My Fantasy Football Leagues</h1>
     <ul id="league-list">
         <!-- Leagues will be displayed here dynamically -->
     </ul>
+   <h1>League Invitations</h1>
+    <ul id="showInvites">
+        <!-- Invites will be displayed here dynamically -->
+    </ul>
+
     </div>
 </body>
 </html>
