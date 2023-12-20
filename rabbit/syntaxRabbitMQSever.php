@@ -18,8 +18,8 @@ function doLogin($username,$password)
 	{
 		echo "failed to connect to database: ". $mydb->error . PHP_EOL;
 		$log = array();
-                $log['where']="listener: doLogin";
-                $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
+        $log['where']="listener: doLogin";
+        $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
 		$logger->publish($log);
 		exit(0);
 	}	
@@ -39,9 +39,9 @@ function doLogin($username,$password)
 		echo "failed to execute query:".PHP_EOL;
 		echo __FILE__.':'.__LINE__.":error: ".$mydb->error.PHP_EOL;
 		$log = array();
-                $log['where']="listener: doLogin";
-                $log['error']="failed to execute query: ". $mydb->error . PHP_EOL;
-                $logger->publish($log);
+        $log['where']="listener: doLogin";
+        $log['error']="failed to execute query: ". $mydb->error . PHP_EOL;
+        $logger->publish($log);
 
 		exit(0);
 	}
@@ -122,7 +122,7 @@ function doLogin($username,$password)
 
 
 }
-function checkOTP($userName, $otp){
+function checkOTP($username, $otp){
 	$logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
 
     $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
@@ -138,7 +138,7 @@ function checkOTP($userName, $otp){
 	}	
 	$sql = "SELECT * FROM syntaxUsers where 'name' = ? and otp = ?";
 	$stmt = $this->db->prepare($sql);
-    $stmt->bind_param('ss',$userName,$otp);
+    $stmt->bind_param('ss',$username,$otp);
 	$stmt->execute();
     $result = $stmt->get_result();
     $dat=[];
@@ -152,9 +152,10 @@ function checkOTP($userName, $otp){
 		return $request;
     }else{
 		$log = array();
-		$log['Validated'] = false;
+		$log['otpValidated'] = false;
+		$log['uname'] = $username;
         $log['where']="listener: checkOTP";
-        $log['error']="password failed to verify";
+        $log['error']="otp failed to verify";
         $logger->publish($log);
 	    print_r($log);
 		return $log; 
@@ -233,9 +234,9 @@ function userRegistration($username, $email, $password)
 			
 			
 			$log = array();
-        	        $log['where']="listener: userRegistration";
-        	        $log['error']="Registration Failed When Inserting ". $mydb->error . PHP_EOL;
-	                $logger->publish($log);
+        	$log['where']="listener: userRegistration";
+        	$log['error']="Registration Failed When Inserting ". $mydb->error . PHP_EOL;
+	        $logger->publish($log);
 
 		  return array('created' => false, 'message'=>"Registration Failed, try again");
 		}
@@ -778,9 +779,10 @@ function requestProcessor($request)
 	    return checkUserDraft($request['uname'],$request['leagueId']);
     case 'getTeamData':
 	    return getTeamData($request['leagueId']);
-   case 'draft':
+   	case 'draft':
 	   return draft($request['uname'],$request['offenseId'],$request['defenseId'],$request['leagueId']);
-
+	case 'otp':
+		return checkOTP($request['uname'],$request['otp']);
   }
 
   $log = array();
