@@ -4,11 +4,15 @@ require_once('path.inc');
 require_once('get_host_info.inc');
 require_once('rabbitMQLib.inc');
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+ 
+require 'vendor/autoload.php';
 function doLogin($username,$password)
 {
 	$logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
 
-    	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+    $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
 	if ($mydb->errno != 0)
 	{
@@ -43,48 +47,121 @@ function doLogin($username,$password)
 	}
 	if($stmt->num_rows>0){
 		$stmt->bind_result($id, $name, $hashPassword);
-		$stmt->fetch();
-		if(password_verify($password, $hashPassword)){
+		$data = $result->fetch_array();
+		if(password_verify($password, $hashPassword) && 
+		(is_null($data['otp']) || (!is_null($data['otp']) && 
+		!is_null($data['otp_expiration']) && 
+		strtotime($data['otp_expiration']) < time()) ) ){
+			$otp = sprintf("%'.05d",mt_rand(0,999999));
+            $expiration = date("Y-m-d H:i" ,strtotime(date('Y-m-d H:i')." +4 mins"));
+			$update_sql = "UPDATE syntaxUsers set otp_expiration = '{$expiration}', 
+			otp = '{$otp}' where id='{$data['id']}' ";
+			$update_otp = $this->db->query($update_sql);
+
 			$request = array();
 			$request['Validated'] = true;
 			$request['id'] = $id;
 			$request['uname'] = $username;
 			print_r($request);
+			
 
-		//Calls sessionAdd
-                	sessionAdd($username);
+			$mail = new PHPMailer(true);
+ 
+			try {
+				$mail->SMTPDebug = 2;                                       
+				$mail->isSMTP();                                            
+				$mail->Host       = 'smtp.gmail.com;';                    
+				$mail->SMTPAuth   = true;                             
+				$mail->Username   = 'bruno.games.mota@gmail.com';                 
+				$mail->Password   = 'cvhq jcqv snde xywd';                        
+				$mail->SMTPSecure = 'tls';                              
+				$mail->Port       = 587;  
+			
+				$mail->setFrom('bruno.games.mota@gmail.com', 'Fantasy');           
+				$mail->addAddress('bruno.ed.mota@gmail.com');
+				
+				
+				$mail->isHTML(true);                                  
+				$mail->Subject = 'Pin';
+				$mail->Body    = "Your pin is <b>$otp</b> ";
+				$mail->AltBody = "Your pin is $otp";
+				$mail->send();
+				echo "Mail has been sent successfully!";
+			} catch (Exception $e) {
+				$log = array();
+            	$log['where']="listener: doLogin";
+        		$log['error']="failed to send email";
+        		$logger->publish($log);
+			}
+            sessionAdd($username);
 			return $request;		
 		}
 
 		else{
-			 $log = array();
-			 $log['Validated'] = false;
-
-              	         $log['where']="listener: doLogin";
-        	         $log['error']="password failed to verify";
-        	         $logger->publish($log);
-	                 print_r($log);
-
-		      	 return $log; 
+			$log = array();
+			$log['Validated'] = false;
+            $log['where']="listener: doLogin";
+        	$log['error']="password failed to verify";
+        	$logger->publish($log);
+	        print_r($log);
+		    return $log; 
 		}
 	 
 	}
 	else{
 		$log = array();
                 $log['Validated'] = false;
-
                 $log['where']="listener: doLogin";
-                $log['error']="password failed to verify";
+                $log['error']="account not found";
                 $logger->publish($log);
                 print_r($log);
 
                 return $log;  
 
-}
+	}
 
 
 }
+function checkOTP($userName, $otp){
+	$logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
 
+    $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+
+	if ($mydb->errno != 0)
+	{
+		echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+		$log = array();
+                $log['where']="listener: checkOTP";
+                $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
+		$logger->publish($log);
+		exit(0);
+	}	
+	$sql = "SELECT * FROM syntaxUsers where 'name' = ? and otp = ?";
+	$stmt = $this->db->prepare($sql);
+    $stmt->bind_param('ss',$userName,$otp);
+	$stmt->execute();
+    $result = $stmt->get_result();
+    $dat=[];
+    if($result->num_rows > 0){
+        $this->db->query("UPDATE syntaxUsers set otp = NULL,
+		 otp_expiration = NULL where name = '{$username}'");
+		$request = array();
+		$request['otpValidated'] = true;
+		$request['uname'] = $username;
+		print_r($request);
+		return $request;
+    }else{
+		$log = array();
+		$log['Validated'] = false;
+        $log['where']="listener: checkOTP";
+        $log['error']="password failed to verify";
+        $logger->publish($log);
+	    print_r($log);
+		return $log; 
+    }
+
+
+}
 function userRegistration($username, $email, $password)
 {
 	//DB connection
@@ -703,6 +780,7 @@ function requestProcessor($request)
 	    return getTeamData($request['leagueId']);
    case 'draft':
 	   return draft($request['uname'],$request['offenseId'],$request['defenseId'],$request['leagueId']);
+
   }
 
   $log = array();
@@ -728,5 +806,4 @@ exit();
 
 
 ?>
-
 

@@ -1,0 +1,6 @@
+{
+    "name": "dev/rabbit",
+    "require": {
+        "phpmailer/phpmailer": "^6.9"
+    }
+}
