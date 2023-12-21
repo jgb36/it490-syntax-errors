@@ -8,10 +8,12 @@ require_once('login.php.inc');
 function logProcessor($log)
 {
   $logFilePath = __DIR__ . '/logfile.txt';
+
+    $currentTime = date('Y-m-d H:i:s');
     if (is_array($log)) {
         $log = implode(PHP_EOL, $log);
     }
-    $logEntry = $log . PHP_EOL . str_repeat('-', 25) . PHP_EOL;
+    $logEntry = "[$currentTime] $log" . PHP_EOL . str_repeat('-', 25) . PHP_EOL;
     file_put_contents($logFilePath, $logEntry, FILE_APPEND);
 }
 
