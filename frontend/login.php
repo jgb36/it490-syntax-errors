@@ -62,12 +62,12 @@ switch ($request["type"])
 
                         //session_start();
                 }
-		}
+		
 
                 //$response = $client->publish($request);
 		break;
+
 	case "logout":
-		
 		echo "in logout case";
 		session_start();
 		$request = array();
@@ -76,8 +76,6 @@ switch ($request["type"])
 		try{
                         $client = new rabbitMQClient("testRabbitMQ.ini","syntaxServer");
                         $response = $client->send_request($request);
-
-
                 }catch(Exception $e){
                         $log = array();
                         $log['where']="login: logout";

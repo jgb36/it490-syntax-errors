@@ -4,19 +4,25 @@ require_once('path.inc');
 require_once('get_host_info.inc');
 require_once('rabbitMQLib.inc');
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+ 
+require 'vendor/autoload.php';
 function doLogin($username,$password)
 {
 	$logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+	$logger2 = new rabbitMQClient("syntaxRabbitMQ.ini","logger2");
 
-    	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+    $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
 	if ($mydb->errno != 0)
 	{
 		echo "failed to connect to database: ". $mydb->error . PHP_EOL;
 		$log = array();
-                $log['where']="listener: doLogin";
-                $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
+        $log['where']="listener: doLogin";
+        $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
 		$logger->publish($log);
+		$logger2->publish($log);
 		exit(0);
 	}	
 
@@ -25,7 +31,7 @@ function doLogin($username,$password)
 	// Hashes the Password
 	$hashPassword = password_hash($password, PASSWORD_DEFAULT);
 
-	$stmt = $mydb->prepare("SELECT id, name, password FROM syntaxUsers WHERE name = ?");
+	$stmt = $mydb->prepare("SELECT id, name, password, email FROM syntaxUsers WHERE name = ?");
 	$stmt->bind_param("s", $username);	
 
 	$stmt->execute();
@@ -35,59 +41,147 @@ function doLogin($username,$password)
 		echo "failed to execute query:".PHP_EOL;
 		echo __FILE__.':'.__LINE__.":error: ".$mydb->error.PHP_EOL;
 		$log = array();
-                $log['where']="listener: doLogin";
-                $log['error']="failed to execute query: ". $mydb->error . PHP_EOL;
-                $logger->publish($log);
+        $log['where']="listener: doLogin";
+        $log['error']="failed to execute query: ". $mydb->error . PHP_EOL;
+        $logger->publish($log);
+		$logger2->publish($log);
+
 
 		exit(0);
 	}
 	if($stmt->num_rows>0){
-		$stmt->bind_result($id, $name, $hashPassword);
-		$stmt->fetch();
-		if(password_verify($password, $hashPassword)){
+		$stmt->bind_result($id, $name, $hashPassword, $email);
+		$data = $stmt->fetch();
+		if(password_verify($password, $hashPassword) && 
+		(is_null($data['otp']) || (!is_null($data['otp']) && 
+		!is_null($data['otp_expiration']) && 
+		strtotime($data['otp_expiration']) < time()) ) ){
+			$otp = sprintf("%'.05d",mt_rand(0,99999));
+            $expiration = date("Y-m-d H:i" ,strtotime(date('Y-m-d H:i')." +4 mins"));
+			$update_sql = "UPDATE syntaxUsers set otp_expiration = ?, otp = ? where id = ? ";
+
+			$update_otp = $mydb->prepare($update_sql);
+			$update_otp->bind_param("ssi", $expiration,$otp,$id);	
+			$update_otp->execute();
 			$request = array();
 			$request['Validated'] = true;
 			$request['id'] = $id;
 			$request['uname'] = $username;
+			$request['email'] = $email;
 			print_r($request);
+			
+			$mail = new PHPMailer(true);
+			
+			try {
+				$mail->SMTPDebug = 2;                                       
+				$mail->isSMTP();                                            
+				$mail->Host       = 'smtp.gmail.com;';                    
+				$mail->SMTPAuth   = true;                             
+				$mail->Username   = 'bruno.games.mota@gmail.com';                 
+				$mail->Password   = 'cvhq jcqv snde xywd';                        
+				$mail->SMTPSecure = 'tls';                              
+				$mail->Port       = 587;  
+			
+				$mail->setFrom('bruno.games.mota@gmail.com', 'Fantasy');     
+				
+				$mail->addAddress($email);
+				
+				
+				$mail->isHTML(true);                                  
+				$mail->Subject = 'Pin';
+				$mail->Body    = "Your pin is <b>$otp</b> ";
+				$mail->AltBody = "Your pin is $otp";
+				$mail->send();
+				echo "Mail has been sent successfully!";
+			} catch (Exception $e) {
+				$log = array();
+            	$log['where']="listener: doLogin";
+        		$log['error']="failed to send email";
+        		$logger->publish($log);
+				$logger2->publish($log);
 
-		//Calls sessionAdd
-                	sessionAdd($username);
+			}
+            sessionAdd($username);
 			return $request;		
 		}
 
 		else{
-			 $log = array();
-			 $log['Validated'] = false;
+			$log = array();
+			$log['Validated'] = false;
+            $log['where']="listener: doLogin";
+        	$log['error']="password failed to verify";
+        	$logger->publish($log);
+			$logger2->publish($log);
 
-              	         $log['where']="listener: doLogin";
-        	         $log['error']="password failed to verify";
-        	         $logger->publish($log);
-	                 print_r($log);
-
-		      	 return $log; 
+	        
+		    return $log; 
 		}
 	 
 	}
 	else{
 		$log = array();
-                $log['Validated'] = false;
+        $log['Validated'] = false;
+        $log['where']="listener: doLogin";
+        $log['error']="account not found";
+        $logger->publish($log);
+		$logger2->publish($log);
 
-                $log['where']="listener: doLogin";
-                $log['error']="password failed to verify";
-                $logger->publish($log);
-                print_r($log);
+        
+		return $log;  
 
-                return $log;  
+	}
+
 
 }
+function checkOTP($username, $otp){
+	$logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+
+    $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+
+	if ($mydb->errno != 0)
+	{
+		echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+		$log = array();
+        $log['where']="listener: checkOTP";
+        $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
+		$logger->publish($log);
+		$logger2->publish($log);
+
+		exit(0);
+	}	
+	$sql = "SELECT * FROM syntaxUsers where name = ? and otp = ?";
+	$stmt = $mydb->prepare($sql);
+	print_r($username);
+	print_r($otp);
+
+    $stmt->bind_param('ss',$username,$otp);
+	$stmt->execute();
+    $result = $stmt->get_result();
+    
+    if($result->num_rows > 0){
+        $mydb->query("UPDATE syntaxUsers set otp = NULL,
+		 otp_expiration = NULL where name = '{$username}'");
+		$request = array();
+		$request['otpValidated'] = true;
+		$request['uname'] = $username;
+		print_r($request);
+		return $request;
+    }else{
+		$log = array();
+		$log['otpValidated'] = false;
+		$log['uname'] = $username;
+        $log['where']="listener: checkOTP";
+        $log['error']="otp failed to verify";
+        $logger->publish($log);
+		$logger2->publish($log);
+
+		return $log; 
+    }
 
 
 }
-
 function userRegistration($username, $email, $password)
 {
-	//DB connection
         $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
 
         $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
@@ -99,22 +193,21 @@ function userRegistration($username, $email, $password)
                 $log['where']="listener: userRegistration";
                 $log['error']="failed to connect to databse: ". $mydb->error . PHP_EOL;
                 $logger->publish($log);
+				$logger2->publish($log);
+
 
 		exit(0);
         }
 
 	echo "successfully connected to database(regis)".PHP_EOL;
 
-	//Check for duplicate entry
 	$checkDups = $mydb->prepare("SELECT *  FROM syntaxUsers WHERE name = ? OR email = ?");
 	$checkDups->bind_param("ss", $username, $email);
 	$checkDups->execute();
 
 	$dup_DB_Result = $checkDups->get_result();
 
-	//Check the database data
 	if($dup_DB_Result-> num_rows > 0) {	
-		//		$checkDups.close();
 		$log = array();
                 $log['where']="listener: userRegistration";
                 $log['error']="existing account with given name: ";
@@ -127,38 +220,27 @@ function userRegistration($username, $email, $password)
 	} 
 
 	else {
-//		$checkDups.close();
-
-		//Hash the password for security
 		$hashPassword = password_hash($password, PASSWORD_DEFAULT);
-
-		//Inserts the user info into the DB
 		$stmt = $mydb->prepare("INSERT INTO syntaxUsers(name, email, password) VALUES (?, ?, ?)");
 		$stmt->bind_param("sss", $username, $email, $hashPassword);
 
-	//Execute the statement to see if it works
 		if($stmt->execute()) {
-		//Registration works
 			$stmt->close();
-	//	$stmt->store_result();
 			$mydb->close();
-	//		$request['created'] = 'true';
-	//		$request['uname'] = 'true';
-
-		//Calls sessionAdd
 			sessionAdd($username);
-	  	return array('created' => true,'uname' => $username, 'message'=>"Registration Successfull for $username");
+	  		return array('created' => true,'uname' => $username, 'message'=>"Registration Successfull for $username");
 		}	
 
 		else {
-			//Registration fails
 			$stmt->close();
 			
 			
 			$log = array();
-        	        $log['where']="listener: userRegistration";
-        	        $log['error']="Registration Failed When Inserting ". $mydb->error . PHP_EOL;
-	                $logger->publish($log);
+        	$log['where']="listener: userRegistration";
+        	$log['error']="Registration Failed When Inserting ". $mydb->error . PHP_EOL;
+	        $logger->publish($log);
+			$logger2->publish($log);
+
 
 		  return array('created' => false, 'message'=>"Registration Failed, try again");
 		}
@@ -170,19 +252,19 @@ function userRegistration($username, $email, $password)
 //Session add
 function sessionAdd($username) {
 
-	//DB connection
 	
-        $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+    $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
 
-        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+    $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
-        if ($mydb->errno != 0)
-        {
-                echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+    if ($mydb->errno != 0)
+    {
+        echo "failed to connect to database: ". $mydb->error . PHP_EOL;
 		$log = array();
-                $log['where']="listener: doLogin";
-                $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
-                $logger->publish($log);
+        $log['where']="listener: doLogin";
+        $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
+        $logger->publish($log);
+		$logger2->publish($log);
 
 		exit(0);
         }
@@ -190,16 +272,13 @@ function sessionAdd($username) {
 	echo "successfully connected to database(add)".PHP_EOL;
 
 	$creationDate = time();
-//        $creationDate = (string)$creationDate;
 	$date = date('Y-m-d H:i:s', $creationDate);
 
 	
-	//Inserts the user info into the DB
         $stmt = $mydb->prepare("INSERT INTO sessions(userName, creationDate) VALUES (?, ?)");
 	$stmt->bind_param("ss",$username, $date);
 	if($stmt->execute()) {
-//		$stmt.close();
-//		$mydb.close();
+
 	}
 	else {
 		$log = array();
@@ -210,33 +289,33 @@ function sessionAdd($username) {
 		echo "failed to create session for $username: ". $mydb->error . PHP_EOL;
 	}
 
-} //function add end bracket
+}
 
 
 
-//function delete
+
 function sessionDelete($username) {
 
-	//DB connection
-        $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+    $logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
 
-        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+    $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
-        if ($mydb->errno != 0)
+    if ($mydb->errno != 0)
         {
-                echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+        echo "failed to connect to database: ". $mydb->error . PHP_EOL;
 		$log = array();
-                $log['where']="listener: sessionDelete";
-                $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
-                $logger->publish($log);
+        $log['where']="listener: sessionDelete";
+        $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
+        $logger->publish($log);
+		$logger2->publish($log);
+
 
 		exit(0);
-        }
+    }
 
-        echo "successfully connected to database(del)".PHP_EOL;
+    echo "successfully connected to database(del)".PHP_EOL;
 
 
-        //DELETES the user info into the DB
 	$stmt = $mydb->prepare("DELETE FROM sessions WHERE userName = ?");
 	$stmt->bind_param("s", $username);
 	if($stmt->execute()) {	
@@ -246,11 +325,10 @@ function sessionDelete($username) {
         }
 	else {
 		$log = array();
-                $log['where']="listener: sessionDelete";
-                $log['error']="failed to delete session for $username: ";
-                $logger->publish($log);
-
-                echo "failed to delete session for $username: ". $mydb->error . PHP_EOL;
+        $log['where']="listener: sessionDelete";
+        $log['error']="failed to delete session for $username: ";
+        $logger->publish($log);
+        echo "failed to delete session for $username: ". $mydb->error . PHP_EOL;
         }
 
 
@@ -295,9 +373,11 @@ function doValidate($username)
 	}
 	else{
 		$log = array();
-                $log['where']="listener: doValidate";
-                $log['error']="failed to locate a session: " ;
-                $logger->publish($log);
+        $log['where']="listener: doValidate";
+        $log['error']="failed to locate a session: " ;
+        $logger->publish($log);
+		$logger2->publish($log);
+
 
 
 
@@ -319,7 +399,7 @@ function createLeague($username, $leagueName){
 	       $stmt2 = $mydb->prepare($query2);
 	       $stmt2->bind_param("si", $username, $lastInsertedPK);
 	       if($stmt2->execute()){
-		       
+				checkForTeamPlayerData();
 		       return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
 		       
 	       }
@@ -328,8 +408,10 @@ function createLeague($username, $leagueName){
                 $log['where']="listener: createLeague";
                 $log['error']="failed to create league for $username:   1 ";
                 $logger->publish($log);
+				$logger2->publish($log);
+
                 return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
-                echo "failed to create league for $username: ". $mydb->error . PHP_EOL;
+                
 	       }
          }else {
                 $log = array();
@@ -371,6 +453,8 @@ function leagueList($username){
                 $log['where']="listener: listLeagues";
                 $log['error']="failed to connect to DB " ;
                 $logger->publish($log);
+				$logger2->publish($log);
+
                 return array('Validated' => false, 'message'=>"No Sesssion Found");
         }
 }
@@ -382,9 +466,11 @@ function checkForTeamPlayerData(){
         {
                 echo "failed to connect to database: ". $mydb->error . PHP_EOL;
                 $log = array();
-                $log['where']="listener: userRegistration";
+                $log['where']="listener: checkForTeamPlayerData";
                 $log['error']="failed to connect to databse: ". $mydb->error . PHP_EOL;
                 $logger->publish($log);
+				$logger2->publish($log);
+
                 exit(0);
         }
         echo "successfully connected to database(regis)".PHP_EOL;
@@ -466,6 +552,8 @@ function showInvites($userName){
                  $log['where']="listener: listLeagues";
                  $log['error']="failed to connect to DB " ;
                  $logger->publish($log);
+				 $logger2->publish($log);
+
                  return array('Validated' => false, 'message'=>"No Sesssion Found");
          }
 }
@@ -528,7 +616,7 @@ function leagueDraftDone($leagueId){
     			echo "Error updating draftDone: " . $mydb->error;
 		}
 		$return = array();
-                $return['done']=false;
+        $return['done']=false;
 		return $return;
 
 	}
@@ -586,7 +674,7 @@ function checkUserDraft($username,$leagueId){
 
 
 function getTeamData($leagueId){
-        $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+    $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 	$query = "SELECT id, teamName, offenseDefense
 	FROM team
 	WHERE id NOT IN (
@@ -605,7 +693,7 @@ function getTeamData($leagueId){
 	)
 	AND offenseDefense = 'defense';";
 	$stmt = $mydb->prepare($query);
-        $stmt->execute();
+    $stmt->execute();
 	$result = $stmt->get_result();
 	$results = [];
 	while ($row = $result->fetch_assoc()){
@@ -629,10 +717,8 @@ function draft($username,$offenseId,$defenseId,$leagueId){
                 $log['where']="listener: userRegistration";
                 $log['error']="failed to connect to databse: ". $mydb->error . PHP_EOL;
                 $logger->publish($log);
+				$logger2->publish($log);
 
-                exit(0);
-		
-		
 	}
 	$stmt = $mydb->prepare($query);
 	$stmt->bind_param("siii", $username, $offenseId,$defenseId,$leagueId);
@@ -646,6 +732,69 @@ function draft($username,$offenseId,$defenseId,$leagueId){
                 return $result;
 	}
 }
+
+function getLeagueViewData($username, $leagueId){
+	$mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
+	if ($mydb->errno != 0)
+	{
+		echo "failed to connect to database: ". $mydb->error . PHP_EOL;
+		$log = array();
+        $log['where']="listener: doLogin";
+        $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
+		$logger->publish($log);
+		$logger2->publish($log);
+
+		
+	}	
+	else{
+		$query = "SELECT
+			p.playerName,
+			(
+				SELECT JSON_ARRAYAGG(
+					JSON_OBJECT(
+						'playername', player.playerName,
+						'position', player.position,
+						'offenseDefense', player.offenseDefense,
+						'JerseyNum', player.JerseyNum,
+						'teamId', player.teamId
+					)
+				)
+				FROM user_drafts ud
+				JOIN player  ON ud.offense_team_id = player.teamId
+				WHERE ud.leagueId = p.leagueID AND ud.userName = p.playerName
+			) AS offenseTeam,
+			(
+				SELECT JSON_ARRAYAGG(
+					JSON_OBJECT(
+						'playername', player.playerName,
+						'position', player.position,
+						'offenseDefense', player.offenseDefense,
+						'JerseyNum', player.JerseyNum,
+						'teamId', player.teamId
+					)
+				)
+				FROM user_drafts ud
+				JOIN player  ON ud.defense_team_id = player.teamId
+				WHERE ud.leagueId = p.leagueID AND ud.userName = p.playerName
+			) AS defenseTeam
+		FROM participants p
+		WHERE p.leagueID = '$leagueID'
+		ORDER BY p.playerName = '$username' DESC;
+		";
+		
+		$stmt = $mydb->prepare($query);
+		$stmt->execute();
+		$result = $stmt->get_result();
+		
+		$results = [];
+		while ($row = $result->fetch_assoc()){
+			$results[]=$row;
+		}
+		print_r($results);
+		return $results;
+
+}
+}
 // main function
 function requestProcessor($request)
 {
@@ -656,9 +805,11 @@ function requestProcessor($request)
   if(!isset($request['type']))
   {
 	  $log = array();
-          $log['where']="listener: requestProcessor";
+        $log['where']="listener: requestProcessor";
           $log['error']="Message type not found" ;
           $logger->publish($log);
+		  $logger2->publish($log);
+
 
     return "ERROR: unsupported message type";
   }
@@ -701,8 +852,14 @@ function requestProcessor($request)
 	    return checkUserDraft($request['uname'],$request['leagueId']);
     case 'getTeamData':
 	    return getTeamData($request['leagueId']);
-   case 'draft':
+   	case 'draft':
 	   return draft($request['uname'],$request['offenseId'],$request['defenseId'],$request['leagueId']);
+	case 'otp':
+		return checkOTP($request['uname'],$request['otp']);
+	case 'leagueView':
+		return getLeagueViewData($request['uname'],$request['leagueId']);
+
+
   }
 
   $log = array();
@@ -711,7 +868,6 @@ function requestProcessor($request)
   $logger->publish($log);
 
   return array("returnCode" => '0', 'message'=>"Server received request and processed");
-  
 }
 
 //HOST SERVER
@@ -728,5 +884,4 @@ exit();
 
 
 ?>
-
 
