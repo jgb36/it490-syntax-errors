@@ -1,75 +1,130 @@
-<html>
-<script>
-HandleValidation()
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>
+        HandleValidation()
 function HandleValidation()
 {
-	var session = new XMLHttpRequest();
-	session.open("POST","login.php",true);
+        var session = new XMLHttpRequest();
+        session.open("POST","login.php",true);
         session.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-	session.onreadystatechange= function ()
+        session.onreadystatechange= function ()
         {
                 if ((this.readyState == 4)&&(this.status == 200))
                 {
-			var t = JSON.stringify(this.responseText);
-			document.getElementById("textResponse").innerHTML = "response: "+t+"<p>";
-         		const o = JSON.parse(this.responseText);
-               		if(o.Validated == true)
-		        {
-               			window.location = "home.html";
-        		}
+                        var t = JSON.stringify(this.responseText);
+                        document.getElementById("textResponse").innerHTML = "response: "+t+"<p>";
+                        const o = JSON.parse(this.responseText);
+                        if(o.Validated == true)
+                        {
+                                window.location = "home.html";
+                        }
 
-		}
+                }
         }
-	session.send("type=validate_session");
+        session.send("type=validate_session");
 }
 
 function HandleLoginResponse(response)
 {
-	var text = JSON.stringify(response);
-	const obj = JSON.parse(response);
-//	document.getElementById("textResponse").innerHTML = response+"<p>";	
-	document.getElementById("textResponse").innerHTML = "response: "+text+"<p>";
-	if(obj.Validated == true)
-	{
-		window.location = "home.html";
-	}
+        var text = JSON.stringify(response);
+        const obj = JSON.parse(response);
+//      document.getElementById("textResponse").innerHTML = response+"<p>";     
+        document.getElementById("textResponse").innerHTML = "response: "+text+"<p>";
+        if(obj.Validated == true)
+        {
+                window.location = "home.html";
+                uname="+obj.uname";
+        }
 }
 
 function SendLoginRequest()
 {
-	event.preventDefault();
-	var username = document.getElementById('username').value;
-	var password = document.getElementById('password').value;
-	var request = new XMLHttpRequest();
-	request.open("POST","login.php",true);
-	request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-	request.onreadystatechange= function ()
-	{
-		if ((this.readyState == 4)&&(this.status == 200))
-		{
-			HandleLoginResponse(this.responseText);
-		}
-	}
-	request.send("type=login&uname="+username+"&pword="+password);
+        event.preventDefault();
+        var username = document.getElementById('username').value;
+        var password = document.getElementById('password').value;
+        var request = new XMLHttpRequest();
+        request.open("POST","login.php",true);
+        request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        request.onreadystatechange= function ()
+        {
+                if ((this.readyState == 4)&&(this.status == 200))
+                {
+                        //alert("A one-time code has been sent to your email")
+                        //HandleLoginResponse(this.responseText)
+                        var text = JSON.stringify(this.responseText);
+            document.getElementById("textResponse").innerHTML = "response: " + text + "<p>";
+            const obj = JSON.parse(this.responseText);
+            if (obj.Validated == true) {
+                var twoFactorCode = prompt("Enter 2FA Code:");
+                if (twoFactorCode !== null) {
+                    var finalRequest = new XMLHttpRequest();
+                    finalRequest.open("POST", "login.php", true);
+                    finalRequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                    finalRequest.onreadystatechange = function () {
+                        if ((this.readyState == 4) && (this.status == 200)) {
+                            var text = JSON.stringify(this.responseText);
+                            document.getElementById("textResponse").innerHTML = "response: " + text + "<p>";
+                            const finalObj = JSON.parse(this.responseText);
+                            if (finalObj.otpValidated == true) {
+                                window.location = "home.html";
+                            }
+                        }
+                    }
+                    finalRequest.send("type=otp&uname=" + username + "&otp=" + twoFactorCode);
+                } else {
+                    
+                    alert("Login Failed");
+                }
+            }
+        }
+    }
+    request.send("type=login&uname=" + username + "&pword=" + password);
+ 
+                
+    
+    //request.send("type=login&uname="+username+"&pword="+password);
 }
-</script>
+    </script>
+    <title>Login Page</title>
+</head>
+<body class="container">
+    <div class="row mt-5">
+        <div class="col-md-6 offset-md-3">
+            <h1 class="text-center">Login Page</h1>
+            <div id="textResponse" class="text-center">
+                awaiting response
+            </div>
+            <form method="post" onsubmit="SendLoginRequest(); return false;">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username:</label>
+                    <input id="username" name="username" required type="text" class="form-control"/>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password:</label>
+                    <input id="password" name="password" required type="password" class="form-control"/>
+                </div>
+                <div class="text-center">
+                    <input name="login" type="submit" value="Login" class="btn btn-primary"/>
+                </div>
+            </form>
+            <div class="text-center mt-3">
+                <p>Haven't signed up yet? <a href="register.html">Click here</a></p>
+            </div>
+        </div>
+    </div>
 
-<h1>Login Page</h1>
-<body>
-<div id="textResponse">
-awaiting response
-</div>
-<div>
-<p>Login</p>
-<p>Haven't signed up yet? <a href = "register.html"> Click here </a>
-</div>
-<script>
-//SendLoginRequest("kehoed","12345");
-</script>
-<form method="post">
-  <label for="username">Username:</label>
-  <input id="username" name="username" required type="text" />
-  <label for="password">Password:</label> <input id="password" name="password" required type="password" />
-  <input name="login" type="submit" value="Login" onclick = SendLoginRequest() /> </form>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
+            integrity="sha384-VHT5t5cI9Zl9D16aygRWlXPMv0Y+OMUZrxPHWlV9dSkE4iW7PpSQZ8i0lMVxDyEf"
+            crossorigin="anonymous">
+        </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+            integrity="sha384-biQ5vcGJ/Y+8V6D2Vi3kL9b6zc37nLyYl9TGAZiQz5jUEwI1aLBlcCyZtTseovG3"
+            crossorigin="anonymous">
+        </script>
 </body>
 </html>
+

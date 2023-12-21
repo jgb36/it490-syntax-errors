@@ -1,5 +1,10 @@
-<html>
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>
 HandleValidation()
 function HandleValidation()
 {
@@ -30,38 +35,61 @@ function HandleInviteResponse(response)
 //      document.getElementById("textResponse").innerHTML = response+"<p>";     
         document.getElementById("textResponse").innerHTML = "response: "+text+"<p>";
 }
+function forfeitLeague()
+{
+    var check = confirm("Are you sure you wish to forfeit this league?")
+    if(check)
+        return true;
+    else
+        return false;
 
-
-function sendInvite()
-	{
-		event.preventDefault();
-		var urlParams = new URLSearchParams(window.location.search);
-		var invite = new XMLHttpRequest();
-		var userName = document.getElementById("userName").value;
-		var id = urlParams.get('leagueId');
-		var leagueName = urlParams.get('leagueName');
-		invite.open("POST","league.php",true);
-	        invite.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-		alert(userName);
-        	invite.onreadystatechange = function ()
-        	{
-                	if ((this.readyState == 4)&&(this.status == 200))
-                	{
-				HandleInviteResponse(this.responseText);
-			}
-		}
-		invite.send("type=invite&uname="+userName+"&leagueName="+leagueName+"&leagueId=" +id);
-	}
+     event.preventDefault();
+        var urlParams = new URLSearchParams(window.location.search);
+        var forfeit = new XMLHttpRequest();
+        var userName = document.getElementById("userName").value;
+        var id = urlParams.get('leagueId');
+        var leagueName = urlParams.get('leagueName');
+        forfeit.open("POST","league.php",true);
+        forfeit.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+        alert(userName);
+        forfeit.onreadystatechange = function ()
+        {
+            if ((this.readyState == 4)&&(this.status == 200))
+            {
+                HandleInviteResponse(this.responseText);
+            }
+        }
+        forfeit.send("type=forfeit&uname="+userName+"&leagueName="+leagueName+"&leagueId=" +id);
+}
 </script>
+    <title>League View</title>
+</head>
+<body class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <h1>League View</h1>
 
-<h1>League View</h1>
-<body>
-<div id="textResponse">
-awaiting response
-</div>
-<div>
-	<p>View your league below</p>
-</div>
+            <div id="textResponse">
+                <p>awaiting response</p>
+            </div>
 
+            <div>
+                <p>View your league below</p>
+            </div>
+
+            <!-- Your form or content here -->
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <form method="post">
+                <input type="submit" value="Forfeit" onclick="forfeitLeague()" class="btn btn-success">
+            </form>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-VHT5t5cI9Zl9D16aygRWlXPMv0Y+OMUZrxPHWlV9dSkE4iW7PpSQZ8i0lMVxDyEf" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-biQ5vcGJ/Y+8V6D2Vi3kL9b6zc37nLyYl9TGAZiQz5jUEwI1aLBlcCyZtTseovG3" crossorigin="anonymous"></script>
+</body>
 </html>
+
 

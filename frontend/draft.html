@@ -1,6 +1,12 @@
 <!DOCTYPE html>
-<html>
-	<script>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-hmR06B03A2Ko8uXbzv8LEONtVI4YYSa1BqXJeQphOnFXInL3jmlWm4zA2eMKlTlT" crossorigin="anonymous"></script>
+
+  <script>
 
 function HandleInviteResponse(response)
  {
@@ -147,27 +153,50 @@ function HandleInviteResponse(response)
             	    getTeamData.send("type=getTeamData&leagueId=" +leagueId);
                 }
     </script>
-	<form  method="post">
-         <label for="userName">Enter username of the person you want to invite: </label>
-         <input id = "userName" type="text" name="userName" required>
-         <input type="submit" value="invite" onclick = sendInvite()>
- 	</form>
 
-	<form id="draftForm" method="post">
-         <h2>Select Offense Team</h2>
-         <select name="offense_team_id">
-             <option value="">Select an offense team</option>
-         </select>
- 
-         <h2>Select Defense Team</h2>
-         <select name="defense_team_id">
-             <option value="">Select a defense team</option>
-         </select>
- 
-         <input type="submit" value="Draft Teams" id="draftButton">
-     </form>
-<script>
-	document.addEventListener("DOMContentLoaded", function(){
+    <title>Syntax Football Draft</title>
+</head>
+<body class="container mt-5">
+    <div class="row">
+        <div class="col-md-6">
+            <form method="post">
+                <div class="mb-3">
+                    <label for="userName" class="form-label">Enter username of the person you want to invite:</label>
+                    <input id="userName" type="text" name="userName" required class="form-control">
+                </div>
+                <input type="submit" value="Invite" onclick="sendInvite()" class="btn btn-success">
+            </form>
+        </div>
+    </div>
+
+    <form id="draftForm" method="post" class="mt-5">
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Select Offense Team</h2>
+                <select name="offense_team_id" class="form-select">
+                    <option value="">Select an offense team</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <h2>Select Defense Team</h2>
+                <select name="defense_team_id" class="form-select">
+                    <option value="">Select a defense team</option>
+                </select>
+            </div>
+        </div>
+        <input type="submit" value="Draft Teams" id="draftButton" class="btn btn-primary mt-3">
+    </form>
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <button id="setDraftDoneButton" style="display: none" class="btn btn-primary">Set Draft Done</button>
+        </div>
+        <div class="col-md-6">
+            <p id="draftIsDone" style="display: none">Your Draft Is Done!</p>
+        </div>
+    </div>
+
+    <script>
+       document.addEventListener("DOMContentLoaded", function(){
 	    document.getElementById("draftButton").addEventListener("click",function(e){
 		e.preventDefault();
 		var offenseSelect = document.querySelector("select[name=offense_team_id]");
@@ -197,5 +226,6 @@ function HandleInviteResponse(response)
 			});
 		});
 </script>
-    </body>
+</body>
 </html>
+

@@ -15,9 +15,10 @@ function logProcessor($log)
     }
     $logEntry = "[$currentTime] $log" . PHP_EOL . str_repeat('-', 25) . PHP_EOL;
     file_put_contents($logFilePath, $logEntry, FILE_APPEND);
+    return;
 }
 
-$server = new rabbitMQServer("RabbitMQ.ini","logger");
+$server = new rabbitMQServer("RabbitMQ.ini","logger2");
 
 echo "logRabbitMQServer BEGIN".PHP_EOL;
 $server->process_requests('logProcessor');
