@@ -19,7 +19,7 @@ function logProcessor($log)
     return;
 }
 
-$server = new rabbitMQServer("RabbitMQ.ini","logger");
+$server = new rabbitMQServer("RabbitMQ.ini","logger2");
 
 echo "logRabbitMQServer BEGIN".PHP_EOL;
 $server->process_requests('logProcessor');

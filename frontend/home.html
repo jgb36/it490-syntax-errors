@@ -1,5 +1,10 @@
-<html>
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>
 HandleValidation()
 function HandleValidation()
 {
@@ -44,20 +49,27 @@ function SendLogoutRequest()
 
 }
 </script>
-<h1>Home Page</h1>
-<body>
-<div id="textResponse">
-<p>You have successfully logged in</p>
-</div>
-<p>Click here to <a href = "league_creation.html"> Create a League </a>
-<!--<p>Click here for <a href = "/phpbb/phpBB3/"> Forums </a>-->
+    <title>Home Page</title>
+</head>
+<body class="container mt-5">
+    <div class="row">
+        <div class="col-md-6">
+            <h1>Home Page</h1>
+            
+            <div id="textResponse">
+                <p>You have successfully logged in</p>
+            </div>
+
+            <p>Click here to <a href="league_creation.html">Create a League</a></p>
+
+            <form method="post">
+                <div class="text-center mt-3">
+                    <input name="logout" type="submit" value="Logout" onclick="SendLogoutRequest()" class="btn btn-danger"/>
+                </div>
+            </form>
+        </div>
+
 <script>
-//SendLoginRequest("kehoed","12345");
-</script>
-<form method = "post">
-	<input name="logout" type="submit" value="Logout" onclick = SendLogoutRequest() />
-</form>
-    <script>
 	//leagueLoader()
         function leagueLoader() {
             var xhr = new XMLHttpRequest();
@@ -149,16 +161,32 @@ function SendLogoutRequest()
 	xhr.send("type=showInvites");
 }
     </script>
-<div id="textResponse">
-     <h1>My Fantasy Football Leagues</h1>
-    <ul id="league-list">
-        <!-- Leagues will be displayed here dynamically -->
-    </ul>
-   <h1>League Invitations</h1>
-    <ul id="showInvites">
-        <!-- Invites will be displayed here dynamically -->
-    </ul>
 
+        <div class="col-md-6">
+            <div class="row mt-3">
+                <div class="col">
+                    <h2>My Fantasy Football Leagues</h2>
+                    <ul id="league-list">
+                        <!-- Leagues will be displayed here dynamically -->
+                    </ul>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col">
+                    <h2>League Invitations</h2>
+                    <ul id="showInvites">
+                        <!-- Invites will be displayed here dynamically -->
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Bootstrap JavaScript and dependencies (Popper.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js" integrity="sha384-VHT5t5cI9Zl9D16aygRWlXPMv0Y+OMUZrxPHWlV9dSkE4iW7PpSQZ8i0lMVxDyEf" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-biQ5vcGJ/Y+8V6D2Vi3kL9b6zc37nLyYl9TGAZiQz5jUEwI1aLBlcCyZtTseovG3" crossorigin="anonymous"></script>
+
 </body>
 </html>
+
