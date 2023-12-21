@@ -11,6 +11,7 @@ require 'vendor/autoload.php';
 function doLogin($username,$password)
 {
 	$logger = new rabbitMQClient("syntaxRabbitMQ.ini","logger");
+	$logger2 = new rabbitMQClient("syntaxRabbitMQ.ini","logger2");
 
     $mydb = new mysqli('localhost','jay','syn490-jay-errors','syntaxErrors490');
 
@@ -21,6 +22,7 @@ function doLogin($username,$password)
         $log['where']="listener: doLogin";
         $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
 		$logger->publish($log);
+		$logger2->publish($log);
 		exit(0);
 	}	
 
@@ -42,6 +44,8 @@ function doLogin($username,$password)
         $log['where']="listener: doLogin";
         $log['error']="failed to execute query: ". $mydb->error . PHP_EOL;
         $logger->publish($log);
+		$logger2->publish($log);
+
 
 		exit(0);
 	}
@@ -94,6 +98,8 @@ function doLogin($username,$password)
             	$log['where']="listener: doLogin";
         		$log['error']="failed to send email";
         		$logger->publish($log);
+				$logger2->publish($log);
+
 			}
             sessionAdd($username);
 			return $request;		
@@ -105,6 +111,8 @@ function doLogin($username,$password)
             $log['where']="listener: doLogin";
         	$log['error']="password failed to verify";
         	$logger->publish($log);
+			$logger2->publish($log);
+
 	        
 		    return $log; 
 		}
@@ -116,6 +124,8 @@ function doLogin($username,$password)
         $log['where']="listener: doLogin";
         $log['error']="account not found";
         $logger->publish($log);
+		$logger2->publish($log);
+
         
 		return $log;  
 
@@ -135,6 +145,8 @@ function checkOTP($username, $otp){
         $log['where']="listener: checkOTP";
         $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
 		$logger->publish($log);
+		$logger2->publish($log);
+
 		exit(0);
 	}	
 	$sql = "SELECT * FROM syntaxUsers where name = ? and otp = ?";
@@ -161,6 +173,8 @@ function checkOTP($username, $otp){
         $log['where']="listener: checkOTP";
         $log['error']="otp failed to verify";
         $logger->publish($log);
+		$logger2->publish($log);
+
 		return $log; 
     }
 
@@ -179,6 +193,8 @@ function userRegistration($username, $email, $password)
                 $log['where']="listener: userRegistration";
                 $log['error']="failed to connect to databse: ". $mydb->error . PHP_EOL;
                 $logger->publish($log);
+				$logger2->publish($log);
+
 
 		exit(0);
         }
@@ -223,6 +239,8 @@ function userRegistration($username, $email, $password)
         	$log['where']="listener: userRegistration";
         	$log['error']="Registration Failed When Inserting ". $mydb->error . PHP_EOL;
 	        $logger->publish($log);
+			$logger2->publish($log);
+
 
 		  return array('created' => false, 'message'=>"Registration Failed, try again");
 		}
@@ -246,6 +264,8 @@ function sessionAdd($username) {
         $log['where']="listener: doLogin";
         $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
         $logger->publish($log);
+		$logger2->publish($log);
+
 		exit(0);
         }
 
@@ -287,6 +307,8 @@ function sessionDelete($username) {
         $log['where']="listener: sessionDelete";
         $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
         $logger->publish($log);
+		$logger2->publish($log);
+
 
 		exit(0);
     }
@@ -354,6 +376,8 @@ function doValidate($username)
         $log['where']="listener: doValidate";
         $log['error']="failed to locate a session: " ;
         $logger->publish($log);
+		$logger2->publish($log);
+
 
 
 
@@ -384,6 +408,8 @@ function createLeague($username, $leagueName){
                 $log['where']="listener: createLeague";
                 $log['error']="failed to create league for $username:   1 ";
                 $logger->publish($log);
+				$logger2->publish($log);
+
                 return array('createLeague' => true, 'message'=>"League Registration Successfull for $username");
                 
 	       }
@@ -427,6 +453,8 @@ function leagueList($username){
                 $log['where']="listener: listLeagues";
                 $log['error']="failed to connect to DB " ;
                 $logger->publish($log);
+				$logger2->publish($log);
+
                 return array('Validated' => false, 'message'=>"No Sesssion Found");
         }
 }
@@ -438,9 +466,11 @@ function checkForTeamPlayerData(){
         {
                 echo "failed to connect to database: ". $mydb->error . PHP_EOL;
                 $log = array();
-                $log['where']="listener: userRegistration";
+                $log['where']="listener: checkForTeamPlayerData";
                 $log['error']="failed to connect to databse: ". $mydb->error . PHP_EOL;
                 $logger->publish($log);
+				$logger2->publish($log);
+
                 exit(0);
         }
         echo "successfully connected to database(regis)".PHP_EOL;
@@ -522,6 +552,8 @@ function showInvites($userName){
                  $log['where']="listener: listLeagues";
                  $log['error']="failed to connect to DB " ;
                  $logger->publish($log);
+				 $logger2->publish($log);
+
                  return array('Validated' => false, 'message'=>"No Sesssion Found");
          }
 }
@@ -584,7 +616,7 @@ function leagueDraftDone($leagueId){
     			echo "Error updating draftDone: " . $mydb->error;
 		}
 		$return = array();
-                $return['done']=false;
+        $return['done']=false;
 		return $return;
 
 	}
@@ -685,6 +717,8 @@ function draft($username,$offenseId,$defenseId,$leagueId){
                 $log['where']="listener: userRegistration";
                 $log['error']="failed to connect to databse: ". $mydb->error . PHP_EOL;
                 $logger->publish($log);
+				$logger2->publish($log);
+
 	}
 	$stmt = $mydb->prepare($query);
 	$stmt->bind_param("siii", $username, $offenseId,$defenseId,$leagueId);
@@ -708,6 +742,8 @@ function getLeagueViewData($username, $leagueId){
         $log['where']="listener: doLogin";
         $log['error']="failed to connect to database: ". $mydb->error . PHP_EOL;
 		$logger->publish($log);
+		$logger2->publish($log);
+
 		
 	}	
 	else{
@@ -772,6 +808,8 @@ function requestProcessor($request)
         $log['where']="listener: requestProcessor";
           $log['error']="Message type not found" ;
           $logger->publish($log);
+		  $logger2->publish($log);
+
 
     return "ERROR: unsupported message type";
   }
